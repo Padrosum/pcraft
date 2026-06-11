@@ -25,7 +25,13 @@ export class PlayerController {
     this.enabled = false;
     this.onJump = null;
     this.onSplash = null;
+    this.onStep = null; // (groundBlockId) on each footstep
+    this.onSwim = null;
+    this.onLand = null;
     this._wasInWater = false;
+    this._wasOnGround = false;
+    this._fallSpeed = 0;
+    this._strideDist = 0;
 
     document.addEventListener('keydown', (e) => {
       if (!this.enabled) return;
@@ -68,6 +74,12 @@ export class PlayerController {
     ) === B.WATER;
   }
 
+  groundBlock() {
+    return this.world.getBlock(
+      Math.floor(this.pos.x), Math.floor(this.pos.y - 0.5), Math.floor(this.pos.z)
+    );
+  }
+
   headInWater() {
     return this.world.getBlock(
       Math.floor(this.pos.x), Math.floor(this.pos.y + EYE), Math.floor(this.pos.z)
@@ -76,7 +88,7 @@ export class PlayerController {
 
   update(dt) {
     this.inWater = this.bodyInWater();
-    if (this.inWater && !this._wasInWater && this.vel.y < -4) this.onSplash?.();
+    if (this.inWater && !this._wasInWater) this.onSplash?.(this.vel.y);
     this._wasInWater = this.inWater;
 
     // input direction in world space
@@ -128,12 +140,35 @@ export class PlayerController {
     // substep to avoid tunnelling at low fps
     const steps = Math.max(1, Math.ceil((Math.abs(this.vel.y) * dt) / 0.5));
     this.onGround = false;
+    this._fallSpeed = this.vel.y;
+    const beforeX = this.pos.x;
+    const beforeZ = this.pos.z;
     for (let i = 0; i < steps; i++) {
       const sdt = dt / steps;
       move('x', this.vel.x * sdt);
       move('z', this.vel.z * sdt);
       move('y', this.vel.y * sdt);
     }
+
+    // stride tracking for footstep / swim-stroke sounds
+    const moved = Math.hypot(this.pos.x - beforeX, this.pos.z - beforeZ);
+    if (this.inWater) {
+      this._strideDist += moved;
+      if (this._strideDist > 1.8) {
+        this._strideDist = 0;
+        this.onSwim?.();
+      }
+    } else if (this.onGround) {
+      if (!this._wasOnGround && this._fallSpeed < -8) this.onLand?.();
+      this._strideDist += moved;
+      if (this._strideDist > 2.1) {
+        this._strideDist = 0;
+        this.onStep?.(this.groundBlock());
+      }
+    } else {
+      this._strideDist = 0.9; // first step lands quickly after touchdown
+    }
+    this._wasOnGround = this.onGround;
 
     // safety: fell out of the world
     if (this.pos.y < -10) this.pos.y = HEIGHT;

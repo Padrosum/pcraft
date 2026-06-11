@@ -36,7 +36,10 @@ const world = new World(scene, atlas);
 const sky = new Sky(scene);
 const player = new PlayerController(camera, world);
 player.onJump = () => Sfx.jump();
-player.onSplash = () => Sfx.splash();
+player.onSplash = (fallSpeed) => (fallSpeed < -4 ? Sfx.splash() : Sfx.swim());
+player.onStep = (groundId) => Sfx.step(BLOCKS[groundId]?.sound);
+player.onSwim = () => Sfx.swim();
+player.onLand = () => Sfx.land();
 
 // block target highlight
 const highlight = new THREE.LineSegments(

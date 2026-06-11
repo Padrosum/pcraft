@@ -41,3 +41,8 @@ node scripts/smoke.mjs   # headless 2 oyunculu duman testi (puppeteer-core gerek
 ## Teknoloji
 
 [Three.js](https://threejs.org) (render) · [Trystero](https://github.com/dmotz/trystero) (sunucusuz WebRTC) · [simplex-noise](https://github.com/jwagner/simplex-noise.js) (arazi) · [Vite](https://vitejs.dev) (build)
+
+## Lisans
+
+[GPL-3.0-or-later](LICENSE). Tüm dokular ve sesler bu projenin kodu tarafından
+çalışma anında üretilir; üçüncü taraf asset içermez.

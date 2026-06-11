@@ -7,6 +7,9 @@ function ac() {
   return ctx;
 }
 
+// small random detune so repeated sounds don't feel machine-like
+const jitter = (v, amount = 0.15) => v * (1 + (Math.random() * 2 - 1) * amount);
+
 function noiseBurst({ dur = 0.1, freq = 800, q = 1, gain = 0.3, type = 'bandpass' }) {
   const c = ac();
   const len = Math.ceil(c.sampleRate * dur);
@@ -44,19 +47,38 @@ function tone({ freq = 220, end = null, dur = 0.1, type = 'square', gain = 0.12 
 export const Sfx = {
   unlock() { ac(); }, // call on first user gesture
   dig(sound) {
-    if (sound === 'hard') noiseBurst({ dur: 0.09, freq: 1400, gain: 0.25 });
-    else if (sound === 'wood') noiseBurst({ dur: 0.1, freq: 600, q: 2, gain: 0.25 });
-    else noiseBurst({ dur: 0.1, freq: 420, q: 0.8, gain: 0.28 });
+    if (sound === 'hard') noiseBurst({ dur: 0.09, freq: jitter(1400), gain: 0.25 });
+    else if (sound === 'wood') noiseBurst({ dur: 0.1, freq: jitter(600), q: 2, gain: 0.25 });
+    else noiseBurst({ dur: 0.1, freq: jitter(420), q: 0.8, gain: 0.28 });
   },
   place() {
-    noiseBurst({ dur: 0.06, freq: 900, gain: 0.18 });
-    tone({ freq: 180, end: 120, dur: 0.07, gain: 0.1 });
+    noiseBurst({ dur: 0.06, freq: jitter(900), gain: 0.18 });
+    tone({ freq: jitter(180), end: 120, dur: 0.07, gain: 0.1 });
+  },
+  // footsteps, voiced by the material walked on
+  step(sound) {
+    if (sound === 'hard') {
+      noiseBurst({ dur: 0.05, freq: jitter(1100, 0.25), q: 1.4, gain: 0.09 });
+    } else if (sound === 'wood') {
+      noiseBurst({ dur: 0.07, freq: jitter(480, 0.2), q: 2.5, gain: 0.1 });
+      tone({ freq: jitter(140), end: 90, dur: 0.05, type: 'sine', gain: 0.04 });
+    } else {
+      // grass/dirt/sand: soft muffled crunch
+      noiseBurst({ dur: 0.08, freq: jitter(320, 0.25), q: 0.7, gain: 0.11, type: 'lowpass' });
+    }
+  },
+  swim() {
+    noiseBurst({ dur: jitter(0.22, 0.3), freq: jitter(550, 0.3), q: 0.6, gain: 0.12, type: 'lowpass' });
   },
   jump() {
     tone({ freq: 240, end: 380, dur: 0.09, type: 'sine', gain: 0.07 });
   },
+  land() {
+    noiseBurst({ dur: 0.07, freq: jitter(280), q: 0.6, gain: 0.12, type: 'lowpass' });
+  },
   splash() {
     noiseBurst({ dur: 0.35, freq: 700, q: 0.5, gain: 0.3, type: 'lowpass' });
+    noiseBurst({ dur: 0.5, freq: 300, q: 0.4, gain: 0.15, type: 'lowpass' });
   },
   join() {
     tone({ freq: 440, end: 660, dur: 0.15, type: 'triangle', gain: 0.1 });
