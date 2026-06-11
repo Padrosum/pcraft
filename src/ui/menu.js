@@ -11,6 +11,9 @@ export class Menu {
     if (joiningRoomId) {
       this.btn.textContent = `Odaya Katıl (${joiningRoomId})`;
     }
+    if (!window.matchMedia('(pointer: fine)').matches) {
+      this.setStatus('⚠ Dokunmatik kontroller henüz yok — bilgisayardan (fare + klavye) oyna');
+    }
     this.input.focus();
   }
 
