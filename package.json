@@ -1,0 +1,19 @@
+{
+  "name": "pcraft",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "simplex-noise": "^4.0.3",
+    "three": "^0.165.0",
+    "trystero": "^0.20.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

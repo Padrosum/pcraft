@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pcraft</title>
+    <meta name="description" content="pcraft — tarayıcıda arkadaşlarınla oynayabileceğin voxel dünyası" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='10' y='6' fill='%237a5538'/><rect width='16' height='6' fill='%235fae3a'/></svg>" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="menu" class="overlay">
+      <div class="panel">
+        <h1>pcraft</h1>
+        <p class="sub">tarayıcıda, arkadaşlarınla</p>
+        <input id="name-input" maxlength="16" placeholder="İsmin" autocomplete="off" />
+        <button id="start-btn">Oda Kur</button>
+        <p id="menu-status" class="status"></p>
+        <div class="help">
+          <b>WASD</b> yürü · <b>Boşluk</b> zıpla/yüz · <b>Sol tık</b> kır · <b>Sağ tık</b> koy<br />
+          <b>1–9 / tekerlek</b> blok seç · <b>E</b> envanter · <b>Esc</b> menü
+        </div>
+      </div>
+    </div>
+
+    <div id="hud" hidden>
+      <div id="crosshair">+</div>
+      <div id="hotbar"></div>
+      <div id="topbar">
+        <span id="player-count">👤 1</span>
+        <button id="copy-link">🔗 Linki Kopyala</button>
+      </div>
+      <div id="coords"></div>
+      <div id="toast" hidden></div>
+    </div>
+
+    <div id="inventory" class="overlay" hidden>
+      <div class="panel">
+        <h2>Envanter</h2>
+        <p class="sub">Bir blok seç — eldeki yuvaya yerleşir</p>
+        <div id="inv-grid"></div>
+      </div>
+    </div>
+
+    <div id="pause" class="overlay" hidden>
+      <div class="panel">
+        <h2>Duraklatıldı</h2>
+        <button id="resume-btn">Devam Et</button>
+        <button id="copy-link-2">🔗 Linki Kopyala</button>
+        <p class="sub">Arkadaşların bu linkle aynı dünyaya katılır</p>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
