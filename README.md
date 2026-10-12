@@ -40,6 +40,7 @@ Tarayıcıda çalışan, arkadaşlarınla oynayabileceğin voxel (Minecraft tarz
 ```bash
 npm install
 npm run dev          # http://localhost:5173/pcraft/
+npm test             # tarayıcısız birim/regresyon testleri (dünya, mesher, fizik)
 node scripts/smoke.mjs   # headless 2 oyunculu duman testi (puppeteer-core gerekir)
 ```
 
