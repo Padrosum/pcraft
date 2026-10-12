@@ -4,6 +4,7 @@ import { DAY_LENGTH } from '../constants.js';
 const DAY = new THREE.Color('#87ceeb');
 const NIGHT = new THREE.Color('#0b1026');
 const DAWN = new THREE.Color('#ff9e5e');
+const UNDERWATER = new THREE.Color('#1a4f8a');
 
 export class Sky {
   constructor(scene) {
@@ -29,7 +30,7 @@ export class Sky {
     this._color = new THREE.Color();
   }
 
-  update(dt, playerPos, camera) {
+  update(dt, playerPos, camera, underwater = false) {
     this.time = (this.time + dt / DAY_LENGTH) % 1;
     const a = this.time * Math.PI * 2; // sun angle
     const sunY = Math.sin(a);
@@ -39,6 +40,16 @@ export class Sky {
     const dawnAmount = THREE.MathUtils.clamp(1 - Math.abs(sunY) * 4, 0, 1) * 0.8;
 
     this._color.copy(NIGHT).lerp(DAY, daylight).lerp(DAWN, dawnAmount * daylight * 0.9 + dawnAmount * 0.15);
+
+    if (underwater) {
+      // murky blue, darker at night, with close fog
+      this._color.copy(UNDERWATER).multiplyScalar(0.35 + daylight * 0.65);
+      this.scene.fog.near = 0.1;
+      this.scene.fog.far = 20;
+    } else {
+      this.scene.fog.near = 40;
+      this.scene.fog.far = 110;
+    }
     this.scene.background.copy(this._color);
     this.scene.fog.color.copy(this._color);
 

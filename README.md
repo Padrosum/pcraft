@@ -13,8 +13,11 @@ Tarayıcıda çalışan, arkadaşlarınla oynayabileceğin voxel (Minecraft tarz
 | Tuş | İşlev |
 |---|---|
 | WASD | yürü |
+| Shift | koş |
+| Ctrl | çömel (kenardan düşmezsin) |
 | Boşluk | zıpla / suda yüz |
-| Sol tık | blok kır |
+| F veya çift Boşluk | uçuş modu (Space yukarı, Shift aşağı) |
+| Sol tık (basılı tut) | blok kır |
 | Sağ tık | blok koy |
 | 1–9 / tekerlek | blok seç |
 | E | envanter |
@@ -22,10 +25,14 @@ Tarayıcıda çalışan, arkadaşlarınla oynayabileceğin voxel (Minecraft tarz
 
 ## Özellikler
 
-- Seed'li prosedürel arazi: tepeler, göller, kumsallar, ağaçlar
+- Seed'li prosedürel arazi: ova, orman, çöl, kar ve dağ biyomları; göller,
+  kumsallar, ağaçlar ve kaktüsler
+- Yer altı mağaraları, kömür/demir cevherleri ve çakıl yatakları
 - Gündüz/gece döngüsü (~10 dk), güneş ve ay
 - Gerçek zamanlı çok oyunculu: oyuncular, isim etiketleri, blok değişiklikleri senkron
 - Dünya tarayıcıda saklanır (localStorage) — aynı linkle kaldığın yerden devam
+- Koşma, çömelme, yaratıcı uçuş ve su altı görüşü
+- Blok kırarken çatlak animasyonu ve kırılma parçacıkları
 - Tüm dokular ve sesler kodla üretilir, hiçbir asset dosyası yok
 
 ## Geliştirme

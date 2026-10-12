@@ -11,6 +11,7 @@ export class Hud {
     this.coordsEl = document.getElementById('coords');
     this.countEl = document.getElementById('player-count');
     this.toastEl = document.getElementById('toast');
+    this.waterEl = document.getElementById('water-overlay');
     this._toastTimer = null;
     this.renderHotbar();
 
@@ -61,9 +62,14 @@ export class Hud {
     return this.slots[this.selected];
   }
 
-  setCoords(pos, fps) {
+  setCoords(pos, fps, flying = false) {
     this.coordsEl.textContent =
-      `x ${pos.x.toFixed(0)}  y ${pos.y.toFixed(0)}  z ${pos.z.toFixed(0)}  ·  ${fps} fps`;
+      `x ${pos.x.toFixed(0)}  y ${pos.y.toFixed(0)}  z ${pos.z.toFixed(0)}  ·  ${fps} fps` +
+      (flying ? '  ·  ✈ uçuş' : '');
+  }
+
+  setUnderwater(on) {
+    this.waterEl.hidden = !on;
   }
 
   setPlayerCount(n) {

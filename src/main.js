@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { B, BLOCKS } from './constants.js';
-import { createAtlas } from './render/textures.js';
+import { createAtlas, createCrackTextures, tileAverageColor } from './render/textures.js';
+import { Particles } from './render/particles.js';
 import { Sky } from './render/sky.js';
 import { World } from './world/world.js';
 import { findSpawn } from './world/worldgen.js';
@@ -49,10 +50,37 @@ const highlight = new THREE.LineSegments(
 highlight.visible = false;
 scene.add(highlight);
 
+// mining progress overlay (cracks appear as you hold left click)
+const crackTextures = createCrackTextures();
+const crackMaterial = new THREE.MeshBasicMaterial({
+  transparent: true,
+  depthWrite: false,
+  polygonOffset: true,
+  polygonOffsetFactor: -1,
+  polygonOffsetUnits: -1,
+});
+const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.004, 1.004, 1.004), crackMaterial);
+crackMesh.visible = false;
+scene.add(crackMesh);
+
+const particles = new Particles(scene);
+
 // ---------- ui ----------
 const hud = new Hud(atlas.canvas);
 const inventory = new Inventory(atlas.canvas, hud);
 const pauseEl = document.getElementById('pause');
+
+player.onFly = (flying) => hud.toast(
+  flying ? 'Uçuş açıldı — Space yukarı, Shift aşağı' : 'Uçuş kapandı'
+);
+
+// requestPointerLock returns a promise in modern browsers and rejects when
+// the document isn't allowed to lock (iframes, automation). Swallow it and
+// surface the error to the player instead of an unhandled rejection.
+function lockPointer() {
+  const r = renderer.domElement.requestPointerLock?.();
+  if (r && typeof r.catch === 'function') r.catch(() => {});
+}
 
 let roomId = getRoomFromHash();
 const isJoiner = !!roomId;
@@ -106,7 +134,7 @@ function initWorld(seed, edits, time, source) {
   menu.hide();
   hud.show();
   started = true;
-  renderer.domElement.requestPointerLock?.();
+  lockPointer();
 }
 
 // World state from a peer. Normally this arrives before the join timeout,
@@ -214,28 +242,43 @@ window.__pcraft = {
   player,
 };
 
+let mouseHeld = false;
+let mining = null; // { x, y, z, progress } while holding left click on a block
+
 document.addEventListener('mousedown', (e) => {
   if (!started || !document.pointerLockElement) return;
-  const hit = raycastVoxel(world, camera.position, player.lookDir(), 6);
-  if (!hit) return;
 
   if (e.button === 0) {
-    const def = BLOCKS[hit.id];
-    if (def.unbreakable) return;
-    applyEdit(hit.x, hit.y, hit.z, B.AIR);
-    Sfx.dig(def.sound);
-  } else if (e.button === 2) {
-    const x = hit.x + hit.nx;
-    const y = hit.y + hit.ny;
-    const z = hit.z + hit.nz;
-    const target = world.getBlock(x, y, z);
-    const id = hud.currentBlock();
-    if (!BLOCKS[id]?.place) return;
-    if (target !== B.AIR && target !== B.WATER) return;
-    if (player.intersectsBlock(x, y, z)) return;
-    applyEdit(x, y, z, id);
-    Sfx.place();
+    mouseHeld = true; // breaking progresses in the animation loop
+    return;
   }
+  if (e.button !== 2) return;
+
+  const hit = raycastVoxel(world, camera.position, player.lookDir(), 6);
+  if (!hit) return;
+  const x = hit.x + hit.nx;
+  const y = hit.y + hit.ny;
+  const z = hit.z + hit.nz;
+  const target = world.getBlock(x, y, z);
+  const id = hud.currentBlock();
+  if (!BLOCKS[id]?.place) return;
+  if (target !== B.AIR && target !== B.WATER) return;
+  if (player.intersectsBlock(x, y, z)) return;
+  applyEdit(x, y, z, id);
+  Sfx.place();
+});
+
+document.addEventListener('mouseup', (e) => {
+  if (e.button !== 0) return;
+  mouseHeld = false;
+  mining = null;
+  crackMesh.visible = false;
+});
+
+window.addEventListener('blur', () => {
+  mouseHeld = false;
+  mining = null;
+  crackMesh.visible = false;
 });
 document.addEventListener('contextmenu', (e) => e.preventDefault());
 
@@ -243,14 +286,14 @@ document.addEventListener('keydown', (e) => {
   if (!started) return;
   if (e.code === 'KeyE') {
     inventory.toggle();
-    if (!inventory.open) renderer.domElement.requestPointerLock?.();
+    if (!inventory.open) lockPointer();
   }
 });
 
 // ---------- pause / pointer lock ----------
 renderer.domElement.addEventListener('click', () => {
   if (started && !inventory.open && !document.pointerLockElement) {
-    renderer.domElement.requestPointerLock?.();
+    lockPointer();
   }
 });
 
@@ -264,9 +307,18 @@ document.addEventListener('pointerlockchange', () => {
   }
 });
 
+document.addEventListener('pointerlockerror', () => {
+  // the browser refused to lock the pointer (embedded frame, permissions):
+  // show the pause panel so the player can retry or leave
+  if (started && !inventory.open) {
+    pauseEl.hidden = false;
+    hud.toast('Fare imleci kilitlenemedi — sayfayı doğrudan açıp tekrar dene', 6000);
+  }
+});
+
 document.getElementById('resume-btn').addEventListener('click', () => {
   pauseEl.hidden = true;
-  renderer.domElement.requestPointerLock?.();
+  lockPointer();
 });
 
 async function copyLink() {
@@ -316,11 +368,14 @@ function animate() {
     player.enabled = !!document.pointerLockElement && !inventory.open;
     player.update(dt);
     world.update(player.pos.x, player.pos.z, 2);
-    sky.update(started ? dt : 0, player.pos, camera);
+    const underwater = player.headInWater();
+    sky.update(started ? dt : 0, player.pos, camera, underwater);
+    hud.setUnderwater(underwater);
+    particles.update(dt);
 
     for (const r of remotes.values()) r.update(dt);
 
-    // block highlight
+    // block highlight + hold-to-mine with crack progress
     const hit = document.pointerLockElement
       ? raycastVoxel(world, camera.position, player.lookDir(), 6)
       : null;
@@ -331,13 +386,42 @@ function animate() {
       highlight.visible = false;
     }
 
+    const target = mouseHeld && hit && !BLOCKS[hit.id].unbreakable ? hit : null;
+    if (!target) {
+      mining = null;
+      crackMesh.visible = false;
+    } else {
+      if (!mining || mining.x !== target.x || mining.y !== target.y || mining.z !== target.z) {
+        mining = { x: target.x, y: target.y, z: target.z, progress: 0 };
+      }
+      const def = BLOCKS[target.id];
+      mining.progress += dt / (def.hardness ?? 0.5);
+      const stage = Math.min(crackTextures.length - 1, Math.floor(mining.progress * crackTextures.length));
+      if (crackMaterial.map !== crackTextures[stage]) {
+        crackMaterial.map = crackTextures[stage];
+        crackMaterial.needsUpdate = true;
+      }
+      crackMesh.position.set(mining.x + 0.5, mining.y + 0.5, mining.z + 0.5);
+      crackMesh.visible = true;
+      if (mining.progress >= 1) {
+        applyEdit(mining.x, mining.y, mining.z, B.AIR);
+        Sfx.dig(def.sound);
+        particles.burst(
+          mining.x + 0.5, mining.y + 0.5, mining.z + 0.5,
+          tileAverageColor(atlas.canvas, def.tiles[1])
+        );
+        mining = null;
+        crackMesh.visible = false;
+      }
+    }
+
     posTimer += dt;
     if (net && posTimer >= 0.1) {
       posTimer = 0;
       net.sendPos({ p: [player.pos.x, player.pos.y, player.pos.z], yaw: player.yaw, pitch: player.pitch });
     }
 
-    hud.setCoords(player.pos, fps);
+    hud.setCoords(player.pos, fps, player.flying);
   }
 
   renderer.render(scene, camera);

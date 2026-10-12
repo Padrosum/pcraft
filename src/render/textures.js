@@ -272,3 +272,58 @@ export function tileIcon(atlasCanvas, tileIndex, size = 32) {
   ctx.drawImage(atlasCanvas, sx, sy, TILE, TILE, 0, 0, size, size);
   return c;
 }
+
+// Average opaque colour of a tile, for break particles. Cached per tile.
+const avgCache = new Map();
+export function tileAverageColor(atlasCanvas, tileIndex) {
+  let color = avgCache.get(tileIndex);
+  if (color) return color;
+  const ctx = atlasCanvas.getContext('2d');
+  const sx = (tileIndex % COLS) * TILE;
+  const sy = ((tileIndex / COLS) | 0) * TILE;
+  const px = ctx.getImageData(sx, sy, TILE, TILE).data;
+  let r = 0, g = 0, b = 0, n = 0;
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] < 128) continue; // skip transparent pixels
+    r += px[i]; g += px[i + 1]; b += px[i + 2]; n++;
+  }
+  if (n === 0) { r = g = b = 128; n = 1; }
+  color = new THREE.Color().setRGB(r / n / 255, g / n / 255, b / n / 255, THREE.SRGBColorSpace);
+  avgCache.set(tileIndex, color);
+  return color;
+}
+
+// Progressive crack overlays (one texture per mining stage).
+export function createCrackTextures(stages = 3) {
+  const rand = rng(4242);
+  const cracks = [];
+  const textures = [];
+  for (let s = 0; s < stages; s++) {
+    const want = 3 + s * 4;
+    while (cracks.length < want) {
+      cracks.push({
+        x: (rand() * TILE) | 0,
+        y: (rand() * TILE) | 0,
+        len: 2 + ((rand() * 6) | 0),
+        ang: rand() * Math.PI * 2,
+      });
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = TILE;
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    ctx.lineWidth = 1;
+    for (const c of cracks) {
+      ctx.beginPath();
+      ctx.moveTo(c.x + 0.5, c.y + 0.5);
+      ctx.lineTo(c.x + 0.5 + Math.cos(c.ang) * c.len, c.y + 0.5 + Math.sin(c.ang) * c.len);
+      ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.magFilter = THREE.NearestFilter;
+    tex.minFilter = THREE.NearestFilter;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    textures.push(tex);
+  }
+  return textures;
+}
