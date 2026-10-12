@@ -18,6 +18,12 @@ export const B = {
   WATER: 10,
   BRICK: 11,
   BEDROCK: 12,
+  GRAVEL: 13,
+  SANDSTONE: 14,
+  SNOW: 15,
+  COAL_ORE: 16,
+  IRON_ORE: 17,
+  CACTUS: 18,
 };
 
 // tiles: [top, side, bottom] atlas tile indices
@@ -36,6 +42,12 @@ export const BLOCKS = {
   [B.WATER]: { name: 'Su', tiles: [11, 11, 11], solid: false, opaque: false, group: 'water', liquid: true, unbreakable: true },
   [B.BRICK]: { name: 'Tuğla', tiles: [12, 12, 12], solid: true, opaque: true, group: 'opaque', place: true, sound: 'hard' },
   [B.BEDROCK]: { name: 'Ana Kaya', tiles: [13, 13, 13], solid: true, opaque: true, group: 'opaque', unbreakable: true, sound: 'hard' },
+  [B.GRAVEL]: { name: 'Çakıl', tiles: [14, 14, 14], solid: true, opaque: true, group: 'opaque', place: true, sound: 'soft' },
+  [B.SANDSTONE]: { name: 'Kumtaşı', tiles: [15, 15, 15], solid: true, opaque: true, group: 'opaque', place: true, sound: 'hard' },
+  [B.SNOW]: { name: 'Kar', tiles: [16, 17, 2], solid: true, opaque: true, group: 'opaque', place: true, sound: 'soft' },
+  [B.COAL_ORE]: { name: 'Kömür Cevheri', tiles: [18, 18, 18], solid: true, opaque: true, group: 'opaque', place: true, sound: 'hard' },
+  [B.IRON_ORE]: { name: 'Demir Cevheri', tiles: [19, 19, 19], solid: true, opaque: true, group: 'opaque', place: true, sound: 'hard' },
+  [B.CACTUS]: { name: 'Kaktüs', tiles: [20, 20, 20], solid: true, opaque: true, group: 'opaque', place: true, sound: 'soft' },
 };
 
 export const PLACEABLE = Object.keys(BLOCKS)

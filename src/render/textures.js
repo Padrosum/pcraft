@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 export const TILE = 16;
 export const COLS = 4;
-export const ROWS = 4;
+export const ROWS = 6;
 
 // Deterministic rng so the atlas looks identical for every player
 function rng(seed) {
@@ -157,6 +157,68 @@ const tilePainters = [
   (ctx, r) => {
     fill(ctx, '#3a3a3a');
     speckle(ctx, r, ['#2c2c2c', '#4a4a4a', '#565656', '#222222'], 0.7);
+  },
+  // 14 gravel
+  (ctx, r) => {
+    fill(ctx, '#8a837c');
+    speckle(ctx, r, ['#7b746d', '#98918a', '#6a635c', '#a29b93'], 0.55);
+    ctx.fillStyle = '#5d564f';
+    for (let i = 0; i < 7; i++) {
+      const s = 1 + ((r() * 2) | 0);
+      ctx.fillRect((r() * (TILE - s)) | 0, (r() * (TILE - s)) | 0, s + 1, s + 1);
+    }
+  },
+  // 15 sandstone
+  (ctx, r) => {
+    fill(ctx, '#d9cb96');
+    speckle(ctx, r, ['#d1c28c', '#e2d5a4'], 0.35);
+    ctx.fillStyle = '#bfb07c';
+    for (let y = 1; y < TILE; y += 5) ctx.fillRect(0, y, TILE, 1);
+  },
+  // 16 snow top
+  (ctx, r) => {
+    fill(ctx, '#eef3f8');
+    speckle(ctx, r, ['#e4ebf2', '#f8fbff', '#dde6ef'], 0.45);
+  },
+  // 17 snow side (dirt with a snowy cap)
+  (ctx, r) => {
+    fill(ctx, '#7a5538');
+    speckle(ctx, r, ['#6e4b30', '#86603f', '#5f4129'], 0.45);
+    for (let x = 0; x < TILE; x++) {
+      const d = 3 + ((r() * 3) | 0);
+      for (let y = 0; y < d; y++) px(ctx, x, y, r() < 0.5 ? '#eef3f8' : '#e0e8f0');
+    }
+  },
+  // 18 coal ore
+  (ctx, r) => {
+    fill(ctx, '#8d8d8d');
+    speckle(ctx, r, ['#828282', '#979797'], 0.4);
+    for (let i = 0; i < 9; i++) {
+      const s = 1 + ((r() * 2) | 0);
+      ctx.fillStyle = ['#2b2b2b', '#1c1c1c', '#3a3a3a'][(r() * 3) | 0];
+      ctx.fillRect((r() * (TILE - s)) | 0, (r() * (TILE - s)) | 0, s + 1, s + 1);
+    }
+  },
+  // 19 iron ore
+  (ctx, r) => {
+    fill(ctx, '#8d8d8d');
+    speckle(ctx, r, ['#828282', '#979797'], 0.4);
+    for (let i = 0; i < 9; i++) {
+      const s = 1 + ((r() * 2) | 0);
+      ctx.fillStyle = ['#d8a06a', '#c98f56', '#e8b57f'][(r() * 3) | 0];
+      ctx.fillRect((r() * (TILE - s)) | 0, (r() * (TILE - s)) | 0, s + 1, s + 1);
+    }
+  },
+  // 20 cactus
+  (ctx, r) => {
+    fill(ctx, '#3f7d2e');
+    for (let x = 0; x < TILE; x += 4) {
+      for (let y = 0; y < TILE; y++) px(ctx, x, y, '#346a26');
+    }
+    speckle(ctx, r, ['#458a33', '#39702a'], 0.3);
+    for (let i = 0; i < 10; i++) {
+      px(ctx, (r() * TILE) | 0, (r() * TILE) | 0, '#dfe8d0');
+    }
   },
 ];
 
