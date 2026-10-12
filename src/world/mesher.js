@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CHUNK, HEIGHT, B, BLOCKS } from '../constants.js';
+import { blockIndex } from './chunk.js';
 
 // Face corner tables: uv v=1 is the top of the tile (flipY=true convention).
 // Triangles are (0,1,2),(2,1,3), CCW seen from outside.
@@ -81,27 +82,46 @@ function bucketToGeometry(b) {
 // caller positions the meshes at cx*CHUNK, 0, cz*CHUNK).
 export function meshChunk(world, cx, cz, tileUV) {
   const buckets = { opaque: makeBucket(), cutout: makeBucket(), water: makeBucket() };
-  const x0 = cx * CHUNK;
-  const z0 = cz * CHUNK;
   const chunk = world.getChunk(cx, cz);
+  const data = chunk.data;
+
+  // Neighbour lookups used to go through world.getBlock per face (floor,
+  // bounds and two Map lookups each). Grab the 4 side chunks once and read
+  // their raw arrays directly; offsets here are never diagonal, so at most
+  // one coordinate can wrap.
+  const nWest = world.getChunk(cx - 1, cz);
+  const nEast = world.getChunk(cx + 1, cz);
+  const nNorth = world.getChunk(cx, cz - 1);
+  const nSouth = world.getChunk(cx, cz + 1);
+
+  function blockAt(lx, y, lz) {
+    if (y < 0) return B.BEDROCK;
+    if (y >= HEIGHT) return B.AIR;
+    if (lx < 0) return nWest.data[blockIndex(CHUNK - 1, y, lz)];
+    if (lx >= CHUNK) return nEast.data[blockIndex(0, y, lz)];
+    if (lz < 0) return nNorth.data[blockIndex(lx, y, CHUNK - 1)];
+    if (lz >= CHUNK) return nSouth.data[blockIndex(lx, y, 0)];
+    return data[blockIndex(lx, y, lz)];
+  }
 
   for (let lx = 0; lx < CHUNK; lx++) {
     for (let lz = 0; lz < CHUNK; lz++) {
-      for (let y = 0; y < HEIGHT; y++) {
-        const id = chunk.get(lx, y, lz);
+      // Only walk up to the highest non-air block of this column.
+      let top = HEIGHT - 1;
+      while (top > 0 && data[blockIndex(lx, top, lz)] === B.AIR) top--;
+
+      for (let y = 0; y <= top; y++) {
+        const id = data[blockIndex(lx, y, lz)];
         if (id === B.AIR) continue;
         const def = BLOCKS[id];
         const bucket = buckets[def.group];
         const isWater = id === B.WATER;
 
         for (const face of FACES) {
-          const nx = x0 + lx + face.dir[0];
-          const ny = y + face.dir[1];
-          const nz = z0 + lz + face.dir[2];
-          let n;
-          if (ny < 0) n = B.BEDROCK;
-          else if (ny >= HEIGHT) n = B.AIR;
-          else n = world.getBlock(nx, ny, nz);
+          const nlx = lx + face.dir[0];
+          const nly = y + face.dir[1];
+          const nlz = lz + face.dir[2];
+          const n = blockAt(nlx, nly, nlz);
 
           const nDef = BLOCKS[n];
           if (nDef.opaque) continue;
@@ -112,7 +132,7 @@ export function meshChunk(world, cx, cz, tileUV) {
           const tile = def.tiles[face.sideTex ? 1 : slot];
           const [u0, v0, u1, v1] = tileUV(tile);
           const base = bucket.positions.length / 3;
-          const surfaceDrop = isWater && face.dir[1] !== -1 && world.getBlock(x0 + lx, y + 1, z0 + lz) !== B.WATER;
+          const surfaceDrop = isWater && face.dir[1] !== -1 && blockAt(lx, y + 1, lz) !== B.WATER;
 
           for (const c of face.corners) {
             let cy = c.pos[1];

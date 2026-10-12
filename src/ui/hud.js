@@ -16,7 +16,8 @@ export class Hud {
 
     window.addEventListener('wheel', (e) => {
       if (document.pointerLockElement) {
-        this.select((this.selected + (e.deltaY > 0 ? 1 : -1) + 9) % 9);
+        const n = this.slots.length;
+        this.select((this.selected + (e.deltaY > 0 ? 1 : -1) + n) % n);
       }
     });
     document.addEventListener('keydown', (e) => {

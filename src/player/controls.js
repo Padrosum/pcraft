@@ -38,6 +38,8 @@ export class PlayerController {
       this.keys.add(e.code);
     });
     document.addEventListener('keyup', (e) => this.keys.delete(e.code));
+    // don't keep running when the window loses focus mid-keypress
+    window.addEventListener('blur', () => this.keys.clear());
     document.addEventListener('mousemove', (e) => {
       if (!this.enabled || document.pointerLockElement === null) return;
       this.yaw -= e.movementX * 0.0024;

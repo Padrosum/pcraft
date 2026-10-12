@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CHUNK, HEIGHT, B, RENDER_DIST } from '../constants.js';
-import { Chunk } from './chunk.js';
+import { Chunk, blockIndex } from './chunk.js';
 import { makeGenerator, generateChunkData } from './worldgen.js';
 import { meshChunk } from './mesher.js';
 
@@ -13,6 +13,7 @@ export class World {
     this.chunks = new Map(); // key -> Chunk
     this.meshes = new Map(); // key -> {group, opaque?, cutout?, water?}
     this.edits = new Map(); // "x,y,z" -> block id (diff vs generated world)
+    this.editsByChunk = new Map(); // key -> Map(blockIndex -> id), for fast chunk load
     this.dirty = new Set(); // chunk keys needing remesh
     this.gen = null;
 
@@ -32,6 +33,11 @@ export class World {
   setSeed(seed) {
     this.seed = seed;
     this.gen = makeGenerator(seed);
+    // Edits describe a diff against the generated world; changing the seed
+    // makes them meaningless, so drop them instead of leaking them into the
+    // new world (e.g. switching from a fresh world to the room's world).
+    this.edits.clear();
+    this.editsByChunk.clear();
     for (const k of [...this.meshes.keys()]) this.disposeMesh(k);
     this.chunks.clear();
     this.dirty.clear();
@@ -43,13 +49,9 @@ export class World {
     if (!c) {
       c = new Chunk(cx, cz, generateChunkData(this.gen, cx, cz));
       // overlay recorded edits that fall inside this chunk
-      const x0 = cx * CHUNK;
-      const z0 = cz * CHUNK;
-      for (const [pk, id] of this.edits) {
-        const [x, y, z] = pk.split(',').map(Number);
-        if (x >= x0 && x < x0 + CHUNK && z >= z0 && z < z0 + CHUNK) {
-          c.set(x - x0, y, z - z0, id);
-        }
+      const editMap = this.editsByChunk.get(k);
+      if (editMap) {
+        for (const [i, id] of editMap) c.data[i] = id;
       }
       this.chunks.set(k, c);
     }
@@ -72,7 +74,13 @@ export class World {
     const chunk = this.getChunk(cx, cz);
     if (chunk.get(lx, y, lz) === id) return false;
     chunk.set(lx, y, lz, id);
-    if (record) this.edits.set(`${x},${y},${z}`, id);
+    if (record) {
+      this.edits.set(`${x},${y},${z}`, id);
+      const k = key(cx, cz);
+      let m = this.editsByChunk.get(k);
+      if (!m) this.editsByChunk.set(k, (m = new Map()));
+      m.set(blockIndex(lx, y, lz), id);
+    }
 
     this.dirty.add(key(cx, cz));
     if (lx === 0) this.dirty.add(key(cx - 1, cz));
@@ -88,11 +96,18 @@ export class World {
 
   applyEdits(arr) {
     for (const [x, y, z, id] of arr) {
+      const cx = Math.floor(x / CHUNK);
+      const cz = Math.floor(z / CHUNK);
+      const lx = x - cx * CHUNK;
+      const lz = z - cz * CHUNK;
+      const k = key(cx, cz);
       this.edits.set(`${x},${y},${z}`, id);
-      const k = key(Math.floor(x / CHUNK), Math.floor(z / CHUNK));
+      let m = this.editsByChunk.get(k);
+      if (!m) this.editsByChunk.set(k, (m = new Map()));
+      m.set(blockIndex(lx, y, lz), id);
       const c = this.chunks.get(k);
       if (c) {
-        c.set(x - Math.floor(x / CHUNK) * CHUNK, y, z - Math.floor(z / CHUNK) * CHUNK, id);
+        c.set(lx, y, lz, id);
         this.dirty.add(k);
       }
     }
