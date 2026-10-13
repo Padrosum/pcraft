@@ -1,10 +1,23 @@
 // Tiny procedural sound effects — no audio assets needed.
+import { config } from '../config.js';
+
 let ctx = null;
+let master = null;
 
 function ac() {
-  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain();
+    master.connect(ctx.destination);
+  }
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
+}
+
+// her çalmada anapılanımı ayarlar (ayar menüsü canlı etki eder)
+function out(c) {
+  master.gain.value = config.muted ? 0 : config.volume;
+  return master;
 }
 
 // small random detune so repeated sounds don't feel machine-like
@@ -26,7 +39,7 @@ function noiseBurst({ dur = 0.1, freq = 800, q = 1, gain = 0.3, type = 'bandpass
   const g = c.createGain();
   g.gain.setValueAtTime(gain, c.currentTime);
   g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
-  src.connect(filter).connect(g).connect(c.destination);
+  src.connect(filter).connect(g).connect(out(c));
   src.start();
 }
 
@@ -39,7 +52,7 @@ function tone({ freq = 220, end = null, dur = 0.1, type = 'square', gain = 0.12 
   const g = c.createGain();
   g.gain.setValueAtTime(gain, c.currentTime);
   g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
-  osc.connect(g).connect(c.destination);
+  osc.connect(g).connect(out(c));
   osc.start();
   osc.stop(c.currentTime + dur);
 }
@@ -103,6 +116,36 @@ export const Sfx = {
   },
   zombie() {
     tone({ freq: jitter(110, 0.3), end: 70, dur: jitter(0.4, 0.3), type: 'sawtooth', gain: 0.07 });
+  },
+  pop() {
+    tone({ freq: jitter(500, 0.3), end: 900, dur: 0.08, type: 'square', gain: 0.07 });
+  },
+  eat() {
+    noiseBurst({ dur: 0.09, freq: jitter(400, 0.3), q: 0.8, gain: 0.18, type: 'lowpass' });
+    setTimeout(() => noiseBurst({ dur: 0.09, freq: jitter(350, 0.3), q: 0.8, gain: 0.15, type: 'lowpass' }), 120);
+  },
+  craft() {
+    noiseBurst({ dur: 0.06, freq: jitter(800), gain: 0.15 });
+    tone({ freq: jitter(300), end: 450, dur: 0.1, type: 'triangle', gain: 0.08 });
+  },
+  click() {
+    tone({ freq: 700, end: 500, dur: 0.05, type: 'square', gain: 0.05 });
+  },
+  mobSound(kind) {
+    if (kind === 'cow') {
+      tone({ freq: jitter(160, 0.2), end: 110, dur: 0.35, type: 'sawtooth', gain: 0.08 });
+    } else if (kind === 'sheep') {
+      tone({ freq: jitter(500, 0.15), end: 480, dur: 0.3, type: 'sawtooth', gain: 0.05 });
+    } else if (kind === 'chicken') {
+      tone({ freq: jitter(800, 0.3), end: 600, dur: 0.08, type: 'square', gain: 0.05 });
+      setTimeout(() => tone({ freq: jitter(750, 0.3), end: 550, dur: 0.08, type: 'square', gain: 0.05 }), 130);
+    } else if (kind === 'hellhound') {
+      tone({ freq: jitter(220, 0.3), end: 90, dur: 0.25, type: 'sawtooth', gain: 0.09 });
+    } else if (kind === 'blaze') {
+      noiseBurst({ dur: 0.3, freq: jitter(1600, 0.2), q: 0.6, gain: 0.05, type: 'highpass' });
+    } else if (kind === 'wraith') {
+      tone({ freq: jitter(90, 0.3), end: 60, dur: 0.5, type: 'sine', gain: 0.06 });
+    }
   },
   portal() {
     tone({ freq: 200, end: 800, dur: 0.5, type: 'sine', gain: 0.12 });

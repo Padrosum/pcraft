@@ -20,9 +20,9 @@
         <p id="menu-status" class="status"></p>
         <div class="help">
           <b>WASD</b> yürü · <b>Shift</b> koş · <b>Ctrl</b> çömel · <b>Boşluk</b> zıpla/yüz<br />
-          <b>F</b> veya çift <b>Boşluk</b> uçuş · <b>Sol tık</b> kır/vur · <b>Sağ tık</b> koy<br />
-          <b>Portal</b> bloğu koyup içine gir: Cehennem'e gidersin<br />
-          <b>1–9 / tekerlek</b> blok seç · <b>E</b> envanter · <b>Esc</b> menü
+          <b>F</b> veya çift <b>Boşluk</b> uçuş · <b>Sol tık</b> kır/vur · <b>Sağ tık</b> koy/ye<br />
+          <b>E</b> envanter &amp; üretim · <b>1–9 / tekerlek</b> eşya seç · <b>Esc</b> menü<br />
+          Blok kır, item topla, <b>üret</b> ile alet yap. <b>Portal</b> bloğuyla Cehennem'e geç.
         </div>
       </div>
     </div>
@@ -31,7 +31,12 @@
       <div id="water-overlay" hidden></div>
       <div id="crosshair">+</div>
       <div id="hotbar"></div>
-      <div id="hearts"></div>
+      <div id="item-name" hidden></div>
+      <div id="status-bars">
+        <div id="bubbles"></div>
+        <div id="hearts"></div>
+        <div id="hunger"></div>
+      </div>
       <div id="topbar">
         <span id="player-count">👤 1</span>
         <button id="copy-link">🔗 Linki Kopyala</button>
@@ -40,11 +45,27 @@
       <div id="toast" hidden></div>
     </div>
 
-    <div id="inventory" class="overlay" hidden>
+    <div id="inventory" class="overlay" hidden></div>
+
+    <div id="settings" class="overlay" hidden>
       <div class="panel">
-        <h2>Envanter</h2>
-        <p class="sub">Bir blok seç — eldeki yuvaya yerleşir</p>
-        <div id="inv-grid"></div>
+        <h2>Ayarlar</h2>
+        <div class="set-rows"></div>
+        <button id="settings-close">Geri</button>
+      </div>
+    </div>
+
+    <div id="devmenu" class="overlay" hidden>
+      <div class="panel dev-panel">
+        <h2>🛠 Geliştirici Menüsü</h2>
+        <div id="dev-gate">
+          <p class="sub">Bu menü şifre korumalı</p>
+          <input id="dev-pass" type="password" placeholder="Şifre" autocomplete="off" />
+          <p id="dev-err" class="dev-err"></p>
+          <button id="dev-unlock">Giriş</button>
+        </div>
+        <div class="dev-rows" hidden></div>
+        <button id="dev-close">Geri</button>
       </div>
     </div>
 
@@ -52,6 +73,7 @@
       <div class="panel">
         <h2>Duraklatıldı</h2>
         <button id="resume-btn">Devam Et</button>
+        <button id="settings-btn">⚙ Ayarlar</button>
         <button id="copy-link-2">🔗 Linki Kopyala</button>
         <p class="sub">Arkadaşların bu linkle aynı dünyaya katılır</p>
       </div>

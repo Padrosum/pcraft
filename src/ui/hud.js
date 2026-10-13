@@ -1,11 +1,10 @@
-import { BLOCKS, DEFAULT_HOTBAR } from '../constants.js';
-import { tileIcon } from '../render/textures.js';
+import { BLOCKS } from '../constants.js';
+import { ITEMS, itemName } from '../world/items.js';
+import { tileIcon, itemIconCanvas } from '../render/textures.js';
 
 export class Hud {
   constructor(atlasCanvas) {
     this.atlasCanvas = atlasCanvas;
-    this.slots = [...DEFAULT_HOTBAR];
-    this.selected = 0;
     this.el = document.getElementById('hud');
     this.hotbarEl = document.getElementById('hotbar');
     this.coordsEl = document.getElementById('coords');
@@ -13,58 +12,119 @@ export class Hud {
     this.toastEl = document.getElementById('toast');
     this.waterEl = document.getElementById('water-overlay');
     this.heartsEl = document.getElementById('hearts');
+    this.hungerEl = document.getElementById('hunger');
+    this.bubblesEl = document.getElementById('bubbles');
+    this.itemNameEl = document.getElementById('item-name');
     this._toastTimer = null;
     this._flashTimer = null;
-    this.renderHotbar();
+    this._nameTimer = null;
+    this.slots = new Array(9).fill(null);
+    this.selected = 0;
     this.renderHearts();
-
-    window.addEventListener('wheel', (e) => {
-      if (document.pointerLockElement) {
-        const n = this.slots.length;
-        this.select((this.selected + (e.deltaY > 0 ? 1 : -1) + n) % n);
-      }
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.code.startsWith('Digit')) {
-        const n = Number(e.code.slice(5));
-        if (n >= 1 && n <= 9) this.select(n - 1);
-      }
-    });
+    this.renderHunger();
+    this.renderBubbles();
   }
 
   show() { this.el.hidden = false; }
 
-  renderHotbar() {
+  // ---- can / açlık / hava ----
+  renderHearts() {
+    this._row(this.heartsEl, 10, '♥');
+  }
+
+  renderHunger() {
+    this._row(this.hungerEl, 10, '🍗');
+  }
+
+  renderBubbles() {
+    this._row(this.bubblesEl, 10, '●');
+  }
+
+  _row(el, n, ch) {
+    if (!el) return;
+    el.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('span');
+      s.className = 'pip';
+      s.textContent = ch;
+      el.appendChild(s);
+    }
+  }
+
+  setHealth(hp) {
+    this._pips(this.heartsEl, hp, 2);
+  }
+
+  setHunger(hunger) {
+    this._pips(this.hungerEl, hunger, 1);
+  }
+
+  setAir(bubbles) {
+    if (!this.bubblesEl) return;
+    const show = bubbles < 10;
+    this.bubblesEl.style.display = show ? 'flex' : 'none';
+    this._pips(this.bubblesEl, bubbles, 1);
+  }
+
+  _pips(el, value, unit) {
+    if (!el) return;
+    const pips = el.children;
+    for (let i = 0; i < pips.length; i++) {
+      const filled = value >= (i + 1) * unit;
+      const half = !filled && value === i * unit + unit / 2;
+      pips[i].className = 'pip' + (filled ? ' full' : half ? ' half' : ' empty');
+    }
+  }
+
+  flashDamage() {
+    if (!this.heartsEl) return;
+    this.heartsEl.classList.remove('shake');
+    void this.heartsEl.offsetWidth;
+    this.heartsEl.classList.add('shake');
+    this.heartsEl.classList.add('red');
+    clearTimeout(this._flashTimer);
+    this._flashTimer = setTimeout(() => this.heartsEl.classList.remove('red'), 350);
+  }
+
+  // ---- hotbar: envanterden beslenir ----
+  setHotbar(slots, selected) {
+    this.slots = slots;
+    this.selected = selected;
     this.hotbarEl.innerHTML = '';
-    this.slots.forEach((id, i) => {
+    slots.forEach((s, i) => {
       const slot = document.createElement('div');
-      slot.className = 'slot' + (i === this.selected ? ' selected' : '');
+      slot.className = 'slot' + (i === selected ? ' selected' : '');
       const num = document.createElement('span');
       num.className = 'num';
       num.textContent = i + 1;
       slot.appendChild(num);
-      if (id && BLOCKS[id]) {
-        slot.appendChild(tileIcon(this.atlasCanvas, BLOCKS[id].tiles[1], 32));
-        slot.title = BLOCKS[id].name;
+      if (s) {
+        const def = ITEMS[s.id];
+        const icon = def?.block !== undefined
+          ? tileIcon(this.atlasCanvas, BLOCKS[def.block].tiles[1], 32)
+          : itemIconCanvas(s.id, 32);
+        slot.appendChild(icon);
+        slot.title = itemName(s.id);
+        if (s.count > 1) {
+          const n = document.createElement('span');
+          n.className = 'count';
+          n.textContent = s.count;
+          slot.appendChild(n);
+        }
       }
       this.hotbarEl.appendChild(slot);
     });
   }
 
-  select(i) {
-    this.selected = i;
-    this.renderHotbar();
+  flashItemName(id) {
+    if (!this.itemNameEl || !id) return;
+    this.itemNameEl.textContent = itemName(id);
+    this.itemNameEl.hidden = false;
+    clearTimeout(this._nameTimer);
+    this._nameTimer = setTimeout(() => { this.itemNameEl.hidden = true; }, 1500);
   }
 
-  setSlot(i, blockId) {
-    this.slots[i] = blockId;
-    this.renderHotbar();
-  }
-
-  currentBlock() {
-    return this.slots[this.selected];
-  }
-
+  // ---- genel ----
   setCoords(pos, fps, flying = false) {
     this.coordsEl.textContent =
       `x ${pos.x.toFixed(0)}  y ${pos.y.toFixed(0)}  z ${pos.z.toFixed(0)}  ·  ${fps} fps` +
@@ -81,39 +141,8 @@ export class Hud {
     this.waterEl.classList.toggle('lava', on);
   }
 
-  renderHearts() {
-    if (!this.heartsEl) return;
-    this.heartsEl.innerHTML = '';
-    for (let i = 0; i < 10; i++) {
-      const h = document.createElement('span');
-      h.className = 'heart';
-      h.textContent = '♥';
-      this.heartsEl.appendChild(h);
-    }
-  }
-
-  setHealth(hp) {
-    if (!this.heartsEl) return;
-    const hearts = this.heartsEl.children;
-    for (let i = 0; i < hearts.length; i++) {
-      const full = hp >= (i + 1) * 2;
-      const half = !full && hp === i * 2 + 1;
-      hearts[i].className = 'heart' + (full ? ' full' : half ? ' half' : ' empty');
-    }
-  }
-
-  flashDamage() {
-    if (!this.heartsEl) return;
-    this.heartsEl.classList.remove('shake');
-    void this.heartsEl.offsetWidth; // restart animation
-    this.heartsEl.classList.add('shake');
-    this.heartsEl.classList.add('red');
-    clearTimeout(this._flashTimer);
-    this._flashTimer = setTimeout(() => this.heartsEl.classList.remove('red'), 350);
-  }
-
-  setPlayerCount(n) {
-    this.countEl.textContent = `👤 ${n}`;
+  toggleCoords(on) {
+    this.coordsEl.style.display = on ? 'block' : 'none';
   }
 
   toast(msg, ms = 2500) {

@@ -115,6 +115,36 @@ export function meshChunk(world, cx, cz, tileUV) {
         if (id === B.AIR) continue;
         const def = BLOCKS[id];
         const bucket = buckets[def.group];
+
+        // cross blocks (flowers, torches): two diagonal quads, both sides
+        // visible via the DoubleSide cutout/emissive material
+        if (def.cross) {
+          const tile = def.tiles[1];
+          const [u0, v0, u1, v1] = tileUV(tile);
+          const base = bucket.positions.length / 3;
+          const shade = 1.0;
+          const quads = [
+            [[0.15, 0, 0.15], [0.85, 0, 0.85]], // diagonal 1
+            [[0.85, 0, 0.15], [0.15, 0, 0.85]], // diagonal 2
+          ];
+          for (const [a, b] of quads) {
+            const qb = bucket.positions.length / 3;
+            bucket.positions.push(
+              lx + a[0], y, lz + a[2],
+              lx + b[0], y, lz + b[2],
+              lx + a[0], y + 1, lz + a[2],
+              lx + b[0], y + 1, lz + b[2]
+            );
+            for (let i = 0; i < 4; i++) {
+              bucket.normals.push(0, 1, 0);
+              bucket.colors.push(shade, shade, shade);
+            }
+            bucket.uvs.push(u0, v0, u1, v0, u0, v1, u1, v1);
+            bucket.indices.push(qb, qb + 1, qb + 2, qb + 2, qb + 1, qb + 3);
+          }
+          continue;
+        }
+
         const isLiquid = !!def.liquid;
 
         for (const face of FACES) {

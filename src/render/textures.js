@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 export const TILE = 16;
 export const COLS = 4;
-export const ROWS = 7;
+export const ROWS = 8;
 
 // Deterministic rng so the atlas looks identical for every player
 function rng(seed) {
@@ -282,6 +282,72 @@ const tilePainters = [
       px(ctx, (r() * TILE) | 0, (r() * TILE) | 0, 'rgba(230,190,255,0.95)');
     }
   },
+  // 26 wool
+  (ctx, r) => {
+    fill(ctx, '#e8e8e8');
+    speckle(ctx, r, ['#dedede', '#f4f4f4', '#d2d2d2'], 0.5);
+    ctx.fillStyle = '#c8c8c8';
+    for (let i = 0; i < 10; i++) {
+      ctx.fillRect((r() * TILE) | 0, (r() * TILE) | 0, 2, 1);
+    }
+  },
+  // 27 torch (cross quads: stick + flame)
+  (ctx) => {
+    ctx.clearRect(0, 0, TILE, TILE);
+    ctx.fillStyle = '#8a6a3e';
+    ctx.fillRect(7, 6, 2, 10);
+    ctx.fillStyle = '#6e5330';
+    ctx.fillRect(7, 6, 1, 10);
+    ctx.fillStyle = '#ffd23e';
+    ctx.fillRect(6.5, 3, 3, 4);
+    ctx.fillStyle = '#fff0a0';
+    ctx.fillRect(7, 1.5, 2, 3);
+    ctx.fillStyle = '#e25822';
+    ctx.fillRect(6, 5, 4, 2);
+  },
+  // 28 poppy (red flower cross)
+  (ctx) => {
+    ctx.clearRect(0, 0, TILE, TILE);
+    ctx.fillStyle = '#3f7d2e';
+    ctx.fillRect(7.5, 8, 1, 8);
+    ctx.fillStyle = '#458a33';
+    ctx.fillRect(5, 11, 3, 1);
+    ctx.fillRect(8, 9, 3, 1);
+    ctx.fillStyle = '#d43a2f';
+    ctx.fillRect(5.5, 3, 5, 5);
+    ctx.fillStyle = '#b02a22';
+    ctx.fillRect(6, 6, 4, 2);
+    ctx.fillStyle = '#2b2b2b';
+    ctx.fillRect(7, 4.5, 2, 2);
+  },
+  // 29 dandelion (yellow flower cross)
+  (ctx) => {
+    ctx.clearRect(0, 0, TILE, TILE);
+    ctx.fillStyle = '#3f7d2e';
+    ctx.fillRect(7.5, 8, 1, 8);
+    ctx.fillStyle = '#458a33';
+    ctx.fillRect(8, 12, 3, 1);
+    ctx.fillStyle = '#ffd23e';
+    ctx.fillRect(5.5, 3, 5, 5);
+    ctx.fillStyle = '#f0b429';
+    ctx.fillRect(6, 6, 4, 2);
+    ctx.fillStyle = '#fff0a0';
+    ctx.fillRect(7, 4.5, 2, 2);
+  },
+  // 30 nether torch (blue flame)
+  (ctx) => {
+    ctx.clearRect(0, 0, TILE, TILE);
+    ctx.fillStyle = '#5e4630';
+    ctx.fillRect(7, 6, 2, 10);
+    ctx.fillStyle = '#453322';
+    ctx.fillRect(7, 6, 1, 10);
+    ctx.fillStyle = '#4fc3f7';
+    ctx.fillRect(6.5, 3, 3, 4);
+    ctx.fillStyle = '#e0f7ff';
+    ctx.fillRect(7, 1.5, 2, 3);
+    ctx.fillStyle = '#1e88e5';
+    ctx.fillRect(6, 5, 4, 2);
+  },
 ];
 
 export function createAtlas() {
@@ -320,6 +386,154 @@ export function createAtlas() {
   }
 
   return { canvas, texture, tileUV };
+}
+
+// Item ikonu: blok itemleri atlas karesinden, blok olmayanlar piksel art
+// çizimden üretilir (16x16, ölçeklenerek büyütülür).
+const ITEM_PAINTERS = {
+  stick: (c) => {
+    c.fillStyle = '#8a6a3e';
+    for (let i = 0; i < 9; i++) c.fillRect(3 + i, 12 - i, 2, 2);
+  },
+  coal: (c) => {
+    c.fillStyle = '#2b2b2b';
+    c.fillRect(4, 6, 5, 5);
+    c.fillRect(8, 4, 4, 4);
+    c.fillStyle = '#4a4a4a';
+    c.fillRect(5, 7, 2, 1);
+    c.fillRect(9, 5, 2, 1);
+  },
+  iron_chunk: (c) => {
+    c.fillStyle = '#d8d8d8';
+    c.fillRect(4, 5, 5, 5);
+    c.fillRect(8, 8, 4, 4);
+    c.fillStyle = '#f4f4f4';
+    c.fillRect(5, 6, 2, 2);
+    c.fillStyle = '#9a9a9a';
+    c.fillRect(9, 9, 2, 2);
+  },
+  feather: (c) => {
+    c.fillStyle = '#f4f4f4';
+    for (let i = 0; i < 7; i++) c.fillRect(5 + i * 0.8, 3 + i, 2.4, 1.6);
+    c.fillStyle = '#c8c8c8';
+    for (let i = 0; i < 7; i++) c.fillRect(6.2 + i * 0.8, 3.5 + i, 0.6, 1);
+  },
+  bone: (c) => {
+    c.fillStyle = '#f0ead8';
+    for (let i = 0; i < 8; i++) c.fillRect(4 + i, 11 - i, 2, 2);
+    c.fillRect(3, 11, 3, 3);
+    c.fillRect(11, 2, 3, 3);
+    c.fillStyle = '#d0c8b0';
+    c.fillRect(5, 11, 2, 2);
+  },
+  blaze_rod: (c) => {
+    c.fillStyle = '#e8a020';
+    for (let i = 0; i < 9; i++) c.fillRect(6, 2 + i, 3, 1.4);
+    c.fillStyle = '#ffd23e';
+    c.fillRect(6.5, 3, 1, 8);
+  },
+  magma_powder: (c) => {
+    c.fillStyle = '#e25822';
+    c.fillRect(4, 6, 4, 4);
+    c.fillRect(9, 4, 3, 3);
+    c.fillRect(8, 9, 4, 3);
+    c.fillStyle = '#ffd23e';
+    c.fillRect(5, 7, 2, 1);
+    c.fillRect(9, 10, 2, 1);
+  },
+  wraith_dust: (c) => {
+    c.fillStyle = '#9a86c8';
+    c.fillRect(4, 6, 3, 3);
+    c.fillRect(9, 5, 3, 3);
+    c.fillRect(7, 10, 3, 3);
+    c.fillStyle = '#d0c4f0';
+    c.fillRect(5, 7, 1, 1);
+    c.fillRect(10, 6, 1, 1);
+  },
+  porkchop: (c) => {
+    c.fillStyle = '#e89aa4';
+    c.fillRect(4, 3, 7, 8);
+    c.fillStyle = '#f4c0c8';
+    c.fillRect(5, 4, 5, 3);
+    c.fillStyle = '#f0ead8';
+    c.fillRect(9, 10, 3, 4);
+  },
+  beef: (c) => {
+    c.fillStyle = '#a03428';
+    c.fillRect(3, 5, 9, 7);
+    c.fillStyle = '#c85040';
+    c.fillRect(4, 6, 6, 3);
+  },
+  chicken_meat: (c) => {
+    c.fillStyle = '#e8b87a';
+    c.fillRect(4, 4, 8, 7);
+    c.fillStyle = '#f4dcae';
+    c.fillRect(5, 5, 5, 3);
+    c.fillStyle = '#f0ead8';
+    c.fillRect(9, 11, 3, 3);
+  },
+  mutton: (c) => {
+    c.fillStyle = '#d46a5a';
+    c.fillRect(4, 4, 8, 8);
+    c.fillStyle = '#eda092';
+    c.fillRect(5, 5, 5, 4);
+    c.fillStyle = '#f0ead8';
+    c.fillRect(10, 11, 3, 3);
+  },
+  rotten_flesh: (c) => {
+    c.fillStyle = '#7a8a3a';
+    c.fillRect(4, 5, 8, 7);
+    c.fillStyle = '#5a6a2a';
+    c.fillRect(5, 6, 3, 2);
+    c.fillRect(9, 9, 2, 2);
+    c.fillStyle = '#8a9a4a';
+    c.fillRect(9, 6, 2, 2);
+  },
+};
+
+// araçlar: (kalem rengi tier'a göre) + kafa şekli türe göre
+function toolPainter(kind, tier) {
+  const head = { 1: '#a8824e', 2: '#8d8d8d', 3: '#e8e8e8' }[tier] || '#8d8d8d';
+  const handle = '#8a6a3e';
+  return (c) => {
+    c.fillStyle = handle;
+    for (let i = 0; i < 8; i++) c.fillRect(3 + i, 12 - i, 2, 2);
+    if (kind === 'pickaxe') {
+      c.fillStyle = head;
+      c.fillRect(3, 2, 10, 2);
+      c.fillRect(3, 4, 2, 2);
+      c.fillRect(11, 4, 2, 2);
+    } else if (kind === 'shovel') {
+      c.fillStyle = head;
+      c.fillRect(10, 2, 4, 4);
+      c.fillRect(10, 6, 2, 2);
+    } else { // sword: uzun bıçak
+      c.fillStyle = head;
+      for (let i = 0; i < 8; i++) c.fillRect(6 + i, 8 - i, 2.4, 2);
+      c.fillStyle = '#5e4630';
+      c.fillRect(4, 10, 4, 2);
+    }
+  };
+}
+
+export function itemIconCanvas(itemId, size = 32) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  let paint = ITEM_PAINTERS[itemId];
+  if (!paint) {
+    const m = /^(wood|stone|iron)_(pick|shovel|sword)$/.exec(itemId);
+    if (m) paint = toolPainter(m[2], { wood: 1, stone: 2, iron: 3 }[m[1]]);
+  }
+  if (paint) {
+    const tmp = document.createElement('canvas');
+    tmp.width = tmp.height = 16;
+    paint(tmp.getContext('2d'));
+    ctx.drawImage(tmp, 0, 0, size, size);
+  }
+  return canvas;
 }
 
 // Draw a single tile onto a small canvas (used for hotbar/inventory icons)

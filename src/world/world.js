@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { CHUNK, HEIGHT, B, RENDER_DIST, DIM_OVERWORLD, DIM_NETHER } from '../constants.js';
+import { CHUNK, HEIGHT, B, DIM_OVERWORLD, DIM_NETHER } from '../constants.js';
+import { config } from '../config.js';
 import { Chunk, blockIndex } from './chunk.js';
 import {
   makeGenerator, generateChunkData, makeNetherGenerator, generateNetherData,
@@ -31,8 +32,9 @@ export class World {
         map: tex, vertexColors: true, transparent: true, opacity: 0.7,
         depthWrite: false, side: THREE.DoubleSide,
       }),
-      // self-lit blocks (lava, glowstone): unaffected by scene lights
-      emissive: new THREE.MeshBasicMaterial({ map: tex, vertexColors: true }),
+      // self-lit blocks (lava, glowstone, torches): unaffected by lights;
+      // DoubleSide so cross-shaped torches read from every angle
+      emissive: new THREE.MeshBasicMaterial({ map: tex, vertexColors: true, side: THREE.DoubleSide }),
     };
   }
 
@@ -203,6 +205,7 @@ export class World {
   update(px, pz, budget = 2) {
     const pcx = Math.floor(px / CHUNK);
     const pcz = Math.floor(pz / CHUNK);
+    const RENDER_DIST = config.renderDist;
 
     // remesh dirty chunks first (block edits)
     for (const k of [...this.dirty]) {
@@ -237,5 +240,10 @@ export class World {
         this.disposeMesh(k);
       }
     }
+  }
+
+  // aktif boyutun üreticisini döndür (kısayol)
+  get currentGen() {
+    return this.generatorFor(this.dim);
   }
 }

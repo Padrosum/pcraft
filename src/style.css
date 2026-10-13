@@ -121,6 +121,88 @@ body {
 
 #death .panel { border-color: #803030; }
 
+/* ---- envanter ---- */
+.inv-panel { max-width: 560px; text-align: left; }
+.inv-panel h3 { color: #7ec850; margin: 8px 0 4px; font-size: 15px; }
+
+#inv-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.tab-btn {
+  flex: 1; padding: 8px; font: inherit; cursor: pointer;
+  background: #222; color: #aaa; border: 2px solid #555;
+}
+.tab-btn:hover { color: #fff; }
+
+#craft-list { max-height: 150px; overflow-y: auto; margin-bottom: 10px; }
+.recipe {
+  display: flex; align-items: center; gap: 8px;
+  padding: 3px 4px; font-size: 12px; color: #999;
+}
+.recipe.ok { color: #ddd; }
+.recipe-out { position: relative; display: inline-flex; }
+.recipe-in { flex: 1; }
+.recipe button {
+  font: inherit; font-size: 12px; padding: 3px 10px; cursor: pointer;
+  background: #5a8f3c; color: #fff; border: 2px solid #2c4a1a;
+}
+.recipe button:disabled { background: #333; border-color: #444; color: #777; cursor: default; }
+
+#inv-slots { display: grid; grid-template-columns: repeat(9, 46px); gap: 3px; }
+.hotbar-row { grid-column: 1 / -1; display: flex; gap: 3px; margin-top: 6px; }
+.inv-slot { width: 46px; height: 46px; }
+.inv-slot.selected { border-color: #fff; background: #4448; }
+
+#inv-palette {
+  display: grid; grid-template-columns: repeat(9, 46px); gap: 3px;
+  max-height: 300px; overflow-y: auto;
+}
+
+.slot .count {
+  position: absolute; bottom: 1px; right: 3px;
+  font-size: 11px; color: #fff; text-shadow: 1px 1px 0 #000;
+}
+
+#cursor-item {
+  position: fixed; z-index: 100; pointer-events: none;
+  width: 28px; height: 28px;
+}
+#cursor-item .count {
+  position: absolute; bottom: -2px; right: -2px;
+  font-size: 11px; color: #fff; text-shadow: 1px 1px 0 #000;
+}
+
+/* ---- ayarlar ---- */
+.set-rows { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 16px; }
+.set-row {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; color: #ddd;
+}
+.set-row span { flex: 1; text-align: left; }
+.set-row b { min-width: 62px; text-align: right; color: #7ec850; }
+.set-row input[type=range] { flex: 1; }
+.set-row select { font: inherit; background: #111; color: #fff; border: 2px solid #666; padding: 3px; }
+
+.mini-btn {
+  font: inherit; font-size: 13px; padding: 6px 10px; cursor: pointer;
+  background: #333; color: #eee; border: 2px solid #666; width: auto;
+}
+.mini-btn:hover { border-color: #aaa; }
+
+/* ---- geliştirici menüsü ---- */
+.dev-panel { max-width: 480px; text-align: left; }
+.dev-rows { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.dev-row {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 13px; color: #ddd;
+}
+.dev-row > span { min-width: 90px; color: #7ec850; }
+.dev-num { width: 64px; font: inherit; background: #111; color: #fff; border: 2px solid #666; padding: 4px; }
+.dev-sel { flex: 1; font: inherit; background: #111; color: #fff; border: 2px solid #666; padding: 4px; }
+#dev-gate input {
+  width: 100%; padding: 10px; font: inherit; font-size: 16px;
+  background: #111; color: #fff; border: 2px solid #666; text-align: center;
+}
+.dev-err { color: #ff5050; min-height: 1.2em; margin: 6px 0; }
+
 #crosshair {
   position: absolute;
   left: 50%;
@@ -142,6 +224,45 @@ body {
   padding: 3px;
   border: 2px solid #222;
 }
+
+#item-name {
+  position: absolute;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: 16px;
+  text-shadow: 2px 2px 0 #000;
+}
+
+#status-bars {
+  position: absolute;
+  bottom: 66px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 424px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+#hearts, #hunger, #bubbles {
+  display: flex;
+  gap: 2px;
+  font-size: 18px;
+  text-shadow: 1px 1px 0 #000;
+}
+
+#hunger { flex-direction: row; }
+#bubbles { display: none; }
+
+.pip { color: #3a1010; }
+.pip.full { color: #ff3b3b; }
+#hunger .pip.full { color: #e8a030; filter: none; }
+#hunger .pip.empty { opacity: 0.35; }
+#bubbles .pip.full { color: #9ad7ff; }
+#bubbles .pip.empty { opacity: 0.2; }
+.heart, .pip { transition: color 0.2s; }
 
 .slot {
   width: 46px;

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { B, BLOCKS, HEIGHT } from '../constants.js';
+import { config } from '../config.js';
 
 const HALF = 0.3; // half-width of player AABB
 const PLAYER_HEIGHT = 1.8;
@@ -70,8 +71,9 @@ export class PlayerController {
     window.addEventListener('blur', () => this.keys.clear());
     document.addEventListener('mousemove', (e) => {
       if (!this.enabled || document.pointerLockElement === null) return;
-      this.yaw -= e.movementX * 0.0024;
-      this.pitch -= e.movementY * 0.0024;
+      const sens = 0.0024 * config.sensitivity;
+      this.yaw -= e.movementX * sens;
+      this.pitch -= e.movementY * sens;
       this.pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, this.pitch));
     });
   }
@@ -273,7 +275,7 @@ export class PlayerController {
     this.camera.rotateY(this.yaw);
     this.camera.rotateX(this.pitch);
 
-    const targetFov = this.sprinting ? 80 : 75;
+    const targetFov = this.sprinting ? config.fov + 5 : config.fov;
     if (Math.abs(this.camera.fov - targetFov) > 0.01) {
       this.camera.fov += (targetFov - this.camera.fov) * Math.min(1, dt * 10);
       this.camera.updateProjectionMatrix();

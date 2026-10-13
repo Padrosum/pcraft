@@ -143,6 +143,15 @@ export function generateChunkData(gen, cx, cz) {
         if (gen.cave(wx, y, wz)) data[idx(lx, y, lz)] = B.AIR;
       }
 
+      // çiçekler: ova ve ormanda çimen üstüne
+      if ((biome === 'plains' || biome === 'forest') && h < MOUNTAIN_LEVEL) {
+        const surf = idx(lx, h, lz);
+        if (data[surf] === B.GRASS && h + 1 < HEIGHT) {
+          const r = hash2(gen.seed + 303, wx, wz);
+          if (r < 0.006) data[idx(lx, h + 1, lz)] = r < 0.003 ? B.FLOWER_RED : B.FLOWER_YELLOW;
+        }
+      }
+
       // ores only replace intact stone
       for (let y = 3; y < h - 3; y++) {
         const i = idx(lx, y, lz);

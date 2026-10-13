@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { DAY_LENGTH, DIM_NETHER } from '../constants.js';
+import { DIM_NETHER } from '../constants.js';
+import { config } from '../config.js';
 
 const DAY = new THREE.Color('#87ceeb');
 const NIGHT = new THREE.Color('#0b1026');
@@ -44,7 +45,8 @@ export class Sky {
 
   update(dt, playerPos, camera, underwater = false, dim = 0) {
     const nether = dim === DIM_NETHER;
-    this.time = (this.time + dt / DAY_LENGTH) % 1;
+    const dayLength = Math.max(30, config.dayMinutes * 60);
+    this.time = (this.time + dt / dayLength) % 1;
     const a = this.time * Math.PI * 2; // sun angle
     const sunY = Math.sin(a);
     const sunX = Math.cos(a);

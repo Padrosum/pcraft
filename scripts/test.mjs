@@ -353,8 +353,8 @@ section('moblar');
   const mhooks = {
     onAttackPlayer: () => attacks++,
     onMobDeath: () => {},
-    onPigSound: () => {},
-    onZombieSound: () => {},
+    onMobSound: () => {},
+    isNight: () => true,
   };
   const mstep = (mob, n, dt = 1 / 60) => {
     for (let i = 0; i < n; i++) mob.update(dt, flatWorld, mplayer, mhooks);
@@ -398,7 +398,7 @@ section('moblar');
   check('yukarı bakan ışın mob bulamaz', raycastMobs(mgr.mobs, origin, new THREE.Vector3(0, 1, 0), 10) === null);
 
   mplayer.pos.set(1000, 11, 1000);
-  mgr.update(0.016, mplayer, { isNight: false }, 0, mhooks);
+  mgr.update(0.016, mplayer, { isNight: false }, 0, {}, mhooks);
   check('uzaktaki moblar temizlenir', mgr.mobs.size === 0);
 
   // tek blok duvara tırmanma ve sonsuz tırmanmanın olmaması
@@ -414,6 +414,49 @@ section('moblar');
   for (let i = 0; i < 600; i++) z2.update(1 / 60, stepWorld, mplayer, mhooks);
   check('zombi tek blok duvara tırmanır', z2.pos.x > 8, `x=${z2.pos.x.toFixed(2)}`);
   check('sonsuz tırmanma yok', z2.pos.y < 14, `y=${z2.pos.y.toFixed(2)}`);
+}
+
+// ---------- itemler & üretim ----------
+section('itemler & üretim');
+{
+  const { ITEMS, RECIPES, canCraft, craft, blockItem, BLOCK_DROPS, MOB_DROPS } = await import('../src/world/items.js');
+
+  check('her tarifin çıktısı ve girdileri tanımlı',
+    RECIPES.every((r) => ITEMS[r.out.id] && r.in.every((i) => ITEMS[i.id])));
+
+  const slot = (id, count) => ({ id, count });
+
+  // kütük -> 4 tahta
+  let slots = [slot(blockItem(B.LOG), 1)];
+  check('kütükten tahta üretilebilir', canCraft(slots, RECIPES[0]));
+  const out = craft(slots, RECIPES[0]);
+  check('üretim çıktısı doğru', out.id === blockItem(B.PLANKS) && out.count === 4);
+  check('kütük tükendi', slots[0] === null);
+
+  // yetersiz malzeme
+  slots = [slot(blockItem(B.LOG), 1)];
+  check('yetersiz malzemeyle üretilemez', !canCraft(slots, RECIPES[1])); // 2 tahta gerekir
+
+  // tahta -> çubuk, sonra kazma
+  slots = [slot(blockItem(B.PLANKS), 6)];
+  const stickOut = craft(slots, RECIPES[1]); // 2 tahta -> 4 çubuk
+  slots.push({ id: stickOut.id, count: stickOut.count });
+  const total = (id) => slots.reduce((n, s) => n + (s && s.id === id ? s.count : 0), 0);
+  check('çubuk üretildi', total('stick') === 4);
+  check('tahta azaldı', total(blockItem(B.PLANKS)) === 4);
+  check('tahta kazma üretilebilir', canCraft(slots, RECIPES.find((r) => r.out.id === 'wood_pick')));
+
+  // blok düşmeleri: kırılabilir blokların karşılığı var
+  const breakable = Object.keys(BLOCKS)
+    .map(Number)
+    .filter((id) => id !== B.AIR && !BLOCKS[id].unbreakable);
+  check('her kırılabilir bloğun düşme kaydı var',
+    breakable.every((id) => id in BLOCK_DROPS), JSON.stringify(breakable.filter((id) => !(id in BLOCK_DROPS))));
+
+  // mob ganimetleri
+  check('her mob türünün ganimeti var',
+    ['pig', 'sheep', 'cow', 'chicken', 'zombie', 'piglin', 'hellhound', 'magma', 'blaze', 'wraith']
+      .every((k) => Array.isArray(MOB_DROPS[k])));
 }
 
 console.log(failures === 0 ? '\nTÜMÜ GEÇTİ' : `\n${failures} TEST BAŞARISIZ`);

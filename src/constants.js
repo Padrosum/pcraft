@@ -29,6 +29,11 @@ export const B = {
   NETHERRACK: 23,
   LAVA: 24,
   PORTAL: 25,
+  WOOL: 26,
+  TORCH: 27,
+  FLOWER_RED: 28,
+  FLOWER_YELLOW: 29,
+  NETHER_TORCH: 30,
 };
 
 // Boyut kimlikleri
@@ -63,6 +68,23 @@ export const BLOCKS = {
   [B.NETHERRACK]: { name: 'Cehennem Taşı', tiles: [23, 23, 23], solid: true, opaque: true, group: 'opaque', place: true, sound: 'hard', hardness: 0.6 },
   [B.LAVA]: { name: 'Lav', tiles: [24, 24, 24], solid: false, opaque: false, group: 'emissive', liquid: true, unbreakable: true },
   [B.PORTAL]: { name: 'Portal', tiles: [25, 25, 25], solid: false, opaque: false, group: 'cutout', place: true, sound: 'hard', hardness: 0.1 },
+  [B.WOOL]: { name: 'Yün', tiles: [26, 26, 26], solid: true, opaque: true, group: 'opaque', place: true, sound: 'soft', hardness: 0.4 },
+  // haç (cross) blokları: iki çapraz düzlem olarak çizilir
+  [B.TORCH]: { name: 'Meşale', tiles: [27, 27, 27], solid: false, opaque: false, group: 'emissive', cross: true, place: true, sound: 'wood', hardness: 0.05, needsGround: true },
+  [B.FLOWER_RED]: { name: 'Gelincik', tiles: [28, 28, 28], solid: false, opaque: false, group: 'cutout', cross: true, place: true, sound: 'soft', hardness: 0.05, needsGround: true },
+  [B.FLOWER_YELLOW]: { name: 'Karahindiba', tiles: [29, 29, 29], solid: false, opaque: false, group: 'cutout', cross: true, place: true, sound: 'soft', hardness: 0.05, needsGround: true },
+  [B.NETHER_TORCH]: { name: 'Cehennem Meşalesi', tiles: [30, 30, 30], solid: false, opaque: false, group: 'emissive', cross: true, place: true, sound: 'wood', hardness: 0.05, needsGround: true },
+};
+
+// Blokların işlenebilirlik sınıfı: doğru alet hız çarpanı verir
+// 'pickaxe' taş ailesi · 'axe' odun ailesi · 'shovel' toprak ailesi
+export const TOOL_CLASS = {
+  [B.STONE]: 'pickaxe', [B.COBBLE]: 'pickaxe', [B.COAL_ORE]: 'pickaxe',
+  [B.IRON_ORE]: 'pickaxe', [B.SANDSTONE]: 'pickaxe', [B.NETHERRACK]: 'pickaxe',
+  [B.OBSIDIAN]: 'pickaxe', [B.BRICK]: 'pickaxe',
+  [B.LOG]: 'axe', [B.PLANKS]: 'axe',
+  [B.GRASS]: 'shovel', [B.DIRT]: 'shovel', [B.SAND]: 'shovel',
+  [B.GRAVEL]: 'shovel', [B.SNOW]: 'shovel',
 };
 
 export const PLACEABLE = Object.keys(BLOCKS)
