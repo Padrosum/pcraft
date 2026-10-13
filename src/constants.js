@@ -24,7 +24,16 @@ export const B = {
   COAL_ORE: 16,
   IRON_ORE: 17,
   CACTUS: 18,
+  OBSIDIAN: 21,
+  GLOWSTONE: 22,
+  NETHERRACK: 23,
+  LAVA: 24,
+  PORTAL: 25,
 };
+
+// Boyut kimlikleri
+export const DIM_OVERWORLD = 0;
+export const DIM_NETHER = 8;
 
 // tiles: [top, side, bottom] atlas tile indices
 // group: 'opaque' | 'cutout' | 'water' render bucket
@@ -49,6 +58,11 @@ export const BLOCKS = {
   [B.COAL_ORE]: { name: 'Kömür Cevheri', tiles: [18, 18, 18], solid: true, opaque: true, group: 'opaque', place: true, sound: 'hard', hardness: 1.1 },
   [B.IRON_ORE]: { name: 'Demir Cevheri', tiles: [19, 19, 19], solid: true, opaque: true, group: 'opaque', place: true, sound: 'hard', hardness: 1.3 },
   [B.CACTUS]: { name: 'Kaktüs', tiles: [20, 20, 20], solid: true, opaque: true, group: 'opaque', place: true, sound: 'soft', hardness: 0.35 },
+  [B.OBSIDIAN]: { name: 'Obsidyen', tiles: [21, 21, 21], solid: true, opaque: true, group: 'opaque', place: true, sound: 'hard', hardness: 2.2 },
+  [B.GLOWSTONE]: { name: 'Işıltıtaşı', tiles: [22, 22, 22], solid: true, opaque: true, group: 'emissive', place: true, sound: 'hard', hardness: 0.5 },
+  [B.NETHERRACK]: { name: 'Cehennem Taşı', tiles: [23, 23, 23], solid: true, opaque: true, group: 'opaque', place: true, sound: 'hard', hardness: 0.6 },
+  [B.LAVA]: { name: 'Lav', tiles: [24, 24, 24], solid: false, opaque: false, group: 'emissive', liquid: true, unbreakable: true },
+  [B.PORTAL]: { name: 'Portal', tiles: [25, 25, 25], solid: false, opaque: false, group: 'cutout', place: true, sound: 'hard', hardness: 0.1 },
 };
 
 export const PLACEABLE = Object.keys(BLOCKS)
@@ -56,5 +70,5 @@ export const PLACEABLE = Object.keys(BLOCKS)
   .filter((id) => BLOCKS[id].place);
 
 export const DEFAULT_HOTBAR = [
-  B.GRASS, B.DIRT, B.STONE, B.COBBLE, B.SAND, B.LOG, B.PLANKS, B.GLASS, B.BRICK,
+  B.GRASS, B.DIRT, B.STONE, B.COBBLE, B.PLANKS, B.GLASS, B.GLOWSTONE, B.OBSIDIAN, B.PORTAL,
 ];

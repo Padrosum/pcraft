@@ -108,11 +108,78 @@ section('düzenleme deposu');
   check('kayıt/yükleme turu: kırıktaş', world2.getBlock(20, 45, 5) === B.COBBLE);
 
   world.setSeed(99);
-  check('seed değişince düzenlemeler sıfırlanıyor', world.edits.size === 0 && world.editsByChunk.size === 0);
+  check('seed değişince düzenlemeler sıfırlanıyor', world.edits.size === 0 && world.dimEditsByChunk.get(0)?.size === 0);
 
   const before = world.getBlock(5, 40, 5);
   check('aynı blok tekrar yazılmıyor', world.setBlock(5, 40, 5, before, true) === false && world.edits.size === 0);
 }
+
+// ---------- boyutlar ----------
+section('boyutlar (ana dünya / cehennem)');
+{
+  const { World } = await import('../src/world/world.js');
+  const {
+    makeNetherGenerator, generateNetherData, findNetherArrival, findOverworldArrival, LAVA_LEVEL,
+  } = await import('../src/world/worldgen.js');
+  const { DIM_OVERWORLD, DIM_NETHER } = await import('../src/constants.js');
+
+  const world = new World(fakeScene, fakeAtlas);
+  world.setSeed(3);
+  check('başlangıç boyutu ana dünya', world.dim === DIM_OVERWORLD);
+
+  // her boyutta ayrı düzenleme
+  world.setBlock(5, 40, 5, B.BRICK, true); // ana dünyada
+  world.setDimension(DIM_NETHER);
+  check('boyut değişince chunklar temizlendi', world.chunks.size === 0 && world.meshes.size === 0);
+  check('ana dünyadaki düzenleme cehenneme sızmıyor', world.getBlock(5, 40, 5) !== B.BRICK);
+  world.setBlock(5, 40, 5, B.GLOWSTONE, true); // cehenneme ayrı düzenleme
+  world.setDimension(DIM_OVERWORLD);
+  check('geri dönünce ana dünya düzenlemesi yerinde', world.getBlock(5, 40, 5) === B.BRICK);
+  world.setDimension(DIM_NETHER);
+  check('cehennem düzenlemesi yerinde', world.getBlock(5, 40, 5) === B.GLOWSTONE);
+  check('boyut bazlı düzenleme listeleri ayrı',
+    world.editsArray(DIM_OVERWORLD).length === 1 && world.editsArray(DIM_NETHER).length === 1);
+
+  // recordEdit: başka boyuta kayıt aktif boyutun chunk'ını bozmamalı
+  world.recordEdit(DIM_OVERWORLD, 5, 40, 5, B.STONE);
+  check('recordEdit diğer boyuta yazdı, aktif boyut dokunulmadı', world.getBlock(5, 40, 5) === B.GLOWSTONE);
+  world.setDimension(DIM_OVERWORLD);
+  check('recordEdit ana dünyada uygulandı', world.getBlock(5, 40, 5) === B.STONE);
+
+  // cehennem üretimi
+  const ngen = makeNetherGenerator(3);
+  const data = generateNetherData(ngen, 0, 0);
+  let nether = {}, bedrockTop = 0, bedrockBottom = 0;
+  for (const id of data) nether[id] = (nether[id] || 0) + 1;
+  const H = HEIGHT;
+  for (let i = 0; i < CHUNK * CHUNK; i++) {
+    if (data[i * H + 0] === B.BEDROCK) bedrockBottom++;
+    if (data[i * H + (H - 1)] === B.BEDROCK) bedrockTop++;
+  }
+  check('cehennem: netherrack üretiliyor', (nether[B.NETHERRACK] || 0) > 1000, `${nether[B.NETHERRACK]}`);
+  check('cehennem: lav denizi var', (nether[B.LAVA] || 0) > 200, `${nether[B.LAVA]}`);
+  check('cehennem: glowstone var', (nether[B.GLOWSTONE] || 0) > 0, `${nether[B.GLOWSTONE]}`);
+  check('cehennem: taban ve tavan bedrock', bedrockBottom === CHUNK * CHUNK && bedrockTop === CHUNK * CHUNK);
+  check('cehennem: açık mağara boşlukları var', (nether[B.AIR] || 0) > 1000, `${nether[B.AIR]}`);
+
+  // varış noktaları
+  const [nx, ny, nz] = findNetherArrival(ngen, 8, 8);
+  check('cehennem varışı lav denizinin üstünde', ny > LAVA_LEVEL + 2, `y=${ny}`);
+  check('cehennem varışı sağlam zeminde', ngen.solidAt(Math.floor(nx), Math.floor(ny) - 1, Math.floor(nz)));
+  check('cehennem varışı havada', !ngen.solidAt(Math.floor(nx), Math.floor(ny), Math.floor(nz)));
+
+  const ogen = makeGenerator(3);
+  const [ox, oy, oz] = findOverworldArrival(ogen, 100, 100);
+  const oh = ogen.height(Math.floor(ox), Math.floor(oz));
+  check('ana dünya varışı karada', oy > SEA_LEVEL + 1 && oh < 40, `y=${oy}`);
+
+  // hız
+  const t0 = performance.now();
+  for (let i = 0; i < 30; i++) generateNetherData(ngen, i % 8, (i / 8) | 0);
+  const ms = (performance.now() - t0) / 30;
+  check('cehennem üretimi < 12 ms/chunk', ms < 12, `${ms.toFixed(2)} ms`);
+}
+
 
 // ---------- mesher ----------
 section('mesher');
@@ -273,6 +340,80 @@ section('oyuncu fiziği');
   step(60);
   check('zıplama yukarı itiyor', jumpVel > 5, `vy=${jumpVel.toFixed(1)}`);
   check('zıplama sonrası yere iniyor', p.onGround && Math.abs(p.pos.y - 11) < 0.01, `y=${p.pos.y.toFixed(2)}`);
+}
+
+// ---------- moblar ----------
+section('moblar');
+{
+  const { Mob, MobManager, raycastMobs } = await import('../src/render/mobs.js');
+  const fakeScene2 = { add() {}, remove() {} };
+  const flatWorld = { getBlock: (x, y) => (y <= 10 ? B.STONE : B.AIR) };
+  const mplayer = { pos: new THREE.Vector3(50, 11, 50), dead: false };
+  let attacks = 0;
+  const mhooks = {
+    onAttackPlayer: () => attacks++,
+    onMobDeath: () => {},
+    onPigSound: () => {},
+    onZombieSound: () => {},
+  };
+  const mstep = (mob, n, dt = 1 / 60) => {
+    for (let i = 0; i < n; i++) mob.update(dt, flatWorld, mplayer, mhooks);
+  };
+
+  const pig = new Mob('pig', fakeScene2, 0.5, 14, 0.5, 1);
+  mstep(pig, 90);
+  check('domuz zemine oturur', Math.abs(pig.pos.y - 11) < 0.05, `y=${pig.pos.y.toFixed(2)}`);
+  check('domuz 3 canla başlar', pig.hp === 3);
+
+  mplayer.pos.set(-3, 11, 2.5);
+  const before = pig.pos.clone();
+  pig.hurt(1, new THREE.Vector3(1, 0, 0));
+  mstep(pig, 60);
+  check('domuz vurulunca oyuncudan uzaklaşır', pig.pos.x > before.x + 1, `dx=${(pig.pos.x - before.x).toFixed(2)}`);
+
+  pig.hurt(1, new THREE.Vector3(1, 0, 0));
+  mstep(pig, 30);
+  pig.hurt(1, new THREE.Vector3(1, 0, 0));
+  check('3 vuruşta ölür', pig.removeMe, `hp=${pig.hp}`);
+
+  const zombie = new Mob('zombie', fakeScene2, 8.5, 14, 0.5, 2);
+  mplayer.pos.set(2.5, 11, 2.5);
+  mstep(zombie, 240);
+  check('zombi oyuncuya yaklaşır', zombie.pos.distanceTo(mplayer.pos) < 4,
+    `dist=${zombie.pos.distanceTo(mplayer.pos).toFixed(2)}`);
+  check('zombi saldırır', attacks > 0, `${attacks} saldırı`);
+
+  const zBefore = zombie.pos.clone();
+  zombie.hurt(2, new THREE.Vector3(0, 0, -1));
+  mstep(zombie, 10);
+  check('zombi geri teper', zombie.pos.z < zBefore.z - 0.1, `dz=${(zombie.pos.z - zBefore.z).toFixed(2)}`);
+
+  const mgr = new MobManager(fakeScene2, flatWorld);
+  const m1 = mgr.spawn('pig', 0.5, 11, 0.5);
+  mgr.spawn('zombie', 3.5, 11, 0.5);
+  const origin = new THREE.Vector3(-2.5, 12, 0.5);
+  const dir = new THREE.Vector3(1, -0.15, 0);
+  const hit = raycastMobs(mgr.mobs, origin, dir, 10);
+  check('vuruş ışını mobu bulur', hit && hit.mob === m1);
+  check('yukarı bakan ışın mob bulamaz', raycastMobs(mgr.mobs, origin, new THREE.Vector3(0, 1, 0), 10) === null);
+
+  mplayer.pos.set(1000, 11, 1000);
+  mgr.update(0.016, mplayer, { isNight: false }, 0, mhooks);
+  check('uzaktaki moblar temizlenir', mgr.mobs.size === 0);
+
+  // tek blok duvara tırmanma ve sonsuz tırmanmanın olmaması
+  const stepWorld = {
+    getBlock: (x, y, z) => {
+      if (y <= 10) return B.STONE;
+      if (x >= 4 && x < 8 && y === 11 && z >= -1 && z <= 1) return B.STONE;
+      return B.AIR;
+    },
+  };
+  const z2 = new Mob('zombie', fakeScene2, 0.5, 14, 0.5, 3);
+  mplayer.pos.set(10, 11, 0.5);
+  for (let i = 0; i < 600; i++) z2.update(1 / 60, stepWorld, mplayer, mhooks);
+  check('zombi tek blok duvara tırmanır', z2.pos.x > 8, `x=${z2.pos.x.toFixed(2)}`);
+  check('sonsuz tırmanma yok', z2.pos.y < 14, `y=${z2.pos.y.toFixed(2)}`);
 }
 
 console.log(failures === 0 ? '\nTÜMÜ GEÇTİ' : `\n${failures} TEST BAŞARISIZ`);

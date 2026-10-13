@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 export const TILE = 16;
 export const COLS = 4;
-export const ROWS = 6;
+export const ROWS = 7;
 
 // Deterministic rng so the atlas looks identical for every player
 function rng(seed) {
@@ -218,6 +218,68 @@ const tilePainters = [
     speckle(ctx, r, ['#458a33', '#39702a'], 0.3);
     for (let i = 0; i < 10; i++) {
       px(ctx, (r() * TILE) | 0, (r() * TILE) | 0, '#dfe8d0');
+    }
+  },
+  // 21 obsidian
+  (ctx, r) => {
+    fill(ctx, '#17111f');
+    speckle(ctx, r, ['#100b18', '#221a2e', '#0b0712'], 0.5);
+    for (let i = 0; i < 7; i++) {
+      px(ctx, (r() * TILE) | 0, (r() * TILE) | 0, '#4a3a6a');
+    }
+    for (let i = 0; i < 4; i++) {
+      px(ctx, (r() * TILE) | 0, (r() * TILE) | 0, '#6a55a0');
+    }
+  },
+  // 22 glowstone
+  (ctx, r) => {
+    fill(ctx, '#c9a24a');
+    speckle(ctx, r, ['#b8903c', '#e0bd63', '#a07f33'], 0.45);
+    for (let i = 0; i < 12; i++) {
+      const s = 1 + ((r() * 2) | 0);
+      ctx.fillStyle = ['#ffe9a8', '#fff6d8', '#f5d87e'][(r() * 3) | 0];
+      ctx.fillRect((r() * (TILE - s)) | 0, (r() * (TILE - s)) | 0, s + 1, s + 1);
+    }
+  },
+  // 23 netherrack
+  (ctx, r) => {
+    fill(ctx, '#6e2f2f');
+    speckle(ctx, r, ['#5e2626', '#7e3a3a', '#4e1f1f', '#8a4444'], 0.55);
+    ctx.fillStyle = '#3f1818';
+    for (let i = 0; i < 8; i++) {
+      ctx.fillRect((r() * TILE) | 0, (r() * TILE) | 0, 1 + ((r() * 2) | 0), 1);
+    }
+  },
+  // 24 lava
+  (ctx, r) => {
+    fill(ctx, '#e25822');
+    speckle(ctx, r, ['#d44a1a', '#f26a2a', '#c23f14'], 0.4);
+    ctx.fillStyle = '#ffd23e';
+    for (let i = 0; i < 6; i++) {
+      const x = (r() * 12) | 0;
+      const y = (r() * TILE) | 0;
+      ctx.fillRect(x, y, 2 + ((r() * 3) | 0), 1);
+      ctx.fillRect(x + 1, y + 1, 2, 1);
+    }
+    for (let i = 0; i < 5; i++) {
+      px(ctx, (r() * TILE) | 0, (r() * TILE) | 0, '#fff0a0');
+    }
+  },
+  // 25 portal (swirling violet energy)
+  (ctx, r) => {
+    ctx.clearRect(0, 0, TILE, TILE);
+    for (let y = 0; y < TILE; y++) {
+      for (let x = 0; x < TILE; x++) {
+        if (r() < 0.18) continue; // holes -> looks like flowing energy
+        const t = (x + y) / (TILE * 2);
+        const c = ['#8a2be2', '#6a1fb8', '#a94fff', '#5416a0'][(r() * 4) | 0];
+        ctx.fillStyle = c;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+    ctx.fillStyle = 'rgba(220,160,255,0.9)';
+    for (let i = 0; i < 8; i++) {
+      px(ctx, (r() * TILE) | 0, (r() * TILE) | 0, 'rgba(230,190,255,0.95)');
     }
   },
 ];

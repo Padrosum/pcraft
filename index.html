@@ -20,7 +20,8 @@
         <p id="menu-status" class="status"></p>
         <div class="help">
           <b>WASD</b> yürü · <b>Shift</b> koş · <b>Ctrl</b> çömel · <b>Boşluk</b> zıpla/yüz<br />
-          <b>F</b> veya çift <b>Boşluk</b> uçuş · <b>Sol tık</b> kır · <b>Sağ tık</b> koy<br />
+          <b>F</b> veya çift <b>Boşluk</b> uçuş · <b>Sol tık</b> kır/vur · <b>Sağ tık</b> koy<br />
+          <b>Portal</b> bloğu koyup içine gir: Cehennem'e gidersin<br />
           <b>1–9 / tekerlek</b> blok seç · <b>E</b> envanter · <b>Esc</b> menü
         </div>
       </div>
@@ -30,6 +31,7 @@
       <div id="water-overlay" hidden></div>
       <div id="crosshair">+</div>
       <div id="hotbar"></div>
+      <div id="hearts"></div>
       <div id="topbar">
         <span id="player-count">👤 1</span>
         <button id="copy-link">🔗 Linki Kopyala</button>
@@ -52,6 +54,14 @@
         <button id="resume-btn">Devam Et</button>
         <button id="copy-link-2">🔗 Linki Kopyala</button>
         <p class="sub">Arkadaşların bu linkle aynı dünyaya katılır</p>
+      </div>
+    </div>
+
+    <div id="death" class="overlay" hidden>
+      <div class="panel">
+        <h2 class="death-title">Öldün!</h2>
+        <p id="death-reason" class="sub"></p>
+        <button id="respawn-btn">Yeniden Doğ</button>
       </div>
     </div>
 

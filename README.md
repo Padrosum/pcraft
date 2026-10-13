@@ -17,7 +17,7 @@ Tarayıcıda çalışan, arkadaşlarınla oynayabileceğin voxel (Minecraft tarz
 | Ctrl | çömel (kenardan düşmezsin) |
 | Boşluk | zıpla / suda yüz |
 | F veya çift Boşluk | uçuş modu (Space yukarı, Shift aşağı) |
-| Sol tık (basılı tut) | blok kır |
+| Sol tık (basılı tut) | blok kır / moba vur |
 | Sağ tık | blok koy |
 | 1–9 / tekerlek | blok seç |
 | E | envanter |
@@ -28,8 +28,17 @@ Tarayıcıda çalışan, arkadaşlarınla oynayabileceğin voxel (Minecraft tarz
 - Seed'li prosedürel arazi: ova, orman, çöl, kar ve dağ biyomları; göller,
   kumsallar, ağaçlar ve kaktüsler
 - Yer altı mağaraları, kömür/demir cevherleri ve çakıl yatakları
-- Gündüz/gece döngüsü (~10 dk), güneş ve ay
-- Gerçek zamanlı çok oyunculu: oyuncular, isim etiketleri, blok değişiklikleri senkron
+- **Cehennem boyutu:** Portal bloğu koyup içine gir — netherrack mağaraları,
+  lav denizi ve ışıltıtaşı ile ayrı bir dünya. Ana dünyaya dönmek için
+  oradaki portala gir
+- **Moblar:** kırlarda domuzlar (vurunca kaçarlar), geceleri ise zombiler
+  peyda olur — takip ederler, vurursan geri tepme alırlar, sabah olunca
+  yok olurlar
+- **Can sistemi:** 10 kalp; yüksekten düşme, boğulma, lav ve zombi hasarı.
+  Ölürsen yeniden doğarsın, güvendeyken canın yavaşça dolar
+- Gündüz/gece döngüsü (~10 dk), güneş ve ay; gecelerde oyuncu meşalesi
+- Gerçek zamanlı çok oyunculu: oyuncular, isim etiketleri, blok
+  değişiklikleri ve boyutlar senkron
 - Dünya tarayıcıda saklanır (localStorage) — aynı linkle kaldığın yerden devam
 - Koşma, çömelme, yaratıcı uçuş ve su altı görüşü
 - Blok kırarken çatlak animasyonu ve kırılma parçacıkları

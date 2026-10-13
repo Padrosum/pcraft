@@ -81,7 +81,7 @@ function bucketToGeometry(b) {
 // Builds {opaque, cutout, water} geometries for one chunk (local coords;
 // caller positions the meshes at cx*CHUNK, 0, cz*CHUNK).
 export function meshChunk(world, cx, cz, tileUV) {
-  const buckets = { opaque: makeBucket(), cutout: makeBucket(), water: makeBucket() };
+  const buckets = { opaque: makeBucket(), cutout: makeBucket(), water: makeBucket(), emissive: makeBucket() };
   const chunk = world.getChunk(cx, cz);
   const data = chunk.data;
 
@@ -115,7 +115,7 @@ export function meshChunk(world, cx, cz, tileUV) {
         if (id === B.AIR) continue;
         const def = BLOCKS[id];
         const bucket = buckets[def.group];
-        const isWater = id === B.WATER;
+        const isLiquid = !!def.liquid;
 
         for (const face of FACES) {
           const nlx = lx + face.dir[0];
@@ -126,13 +126,13 @@ export function meshChunk(world, cx, cz, tileUV) {
           const nDef = BLOCKS[n];
           if (nDef.opaque) continue;
           if (n === id) continue; // cull faces between identical transparent blocks
-          if (isWater && face.dir[1] === 0 && n !== B.AIR && BLOCKS[n].liquid) continue;
+          if (isLiquid && nDef.liquid) continue; // no faces between different liquids
 
           const slot = face.texSlot ?? 1;
           const tile = def.tiles[face.sideTex ? 1 : slot];
           const [u0, v0, u1, v1] = tileUV(tile);
           const base = bucket.positions.length / 3;
-          const surfaceDrop = isWater && face.dir[1] !== -1 && blockAt(lx, y + 1, lz) !== B.WATER;
+          const surfaceDrop = isLiquid && face.dir[1] !== -1 && blockAt(lx, y + 1, lz) !== id;
 
           for (const c of face.corners) {
             let cy = c.pos[1];
@@ -152,5 +152,6 @@ export function meshChunk(world, cx, cz, tileUV) {
     opaque: bucketToGeometry(buckets.opaque),
     cutout: bucketToGeometry(buckets.cutout),
     water: bucketToGeometry(buckets.water),
+    emissive: bucketToGeometry(buckets.emissive),
   };
 }

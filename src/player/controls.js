@@ -44,6 +44,7 @@ export class PlayerController {
     this._strideDist = 0;
     this._eye = EYE;
     this._lastSpace = -Infinity;
+    this.kb = new THREE.Vector3(); // external knockback, decays each frame
 
     document.addEventListener('keydown', (e) => {
       if (!this.enabled) return;
@@ -134,6 +135,20 @@ export class PlayerController {
     ) === B.WATER;
   }
 
+  bodyInLiquid(id) {
+    return this.world.getBlock(
+      Math.floor(this.pos.x), Math.floor(this.pos.y + 0.6), Math.floor(this.pos.z)
+    ) === id;
+  }
+
+  // external impulse (mob hits, explosions); decayed in update
+  applyKnockback(dx, dy, dz) {
+    this.kb.x += dx;
+    this.kb.y += dy;
+    this.kb.z += dz;
+    if (!this.flying) this.onGround = false;
+  }
+
   update(dt) {
     this.inWater = this.bodyInWater();
     if (this.inWater && !this._wasInWater) this.onSplash?.(this.vel.y);
@@ -165,8 +180,10 @@ export class PlayerController {
       : this.sneaking ? SNEAK_SPEED
       : this.sprinting ? SPRINT_SPEED
       : WALK_SPEED;
-    this.vel.x = dx * speed;
-    this.vel.z = dz * speed;
+    this.vel.x = dx * speed + this.kb.x;
+    this.vel.z = dz * speed + this.kb.z;
+    this.kb.x *= Math.max(0, 1 - dt * 6);
+    this.kb.z *= Math.max(0, 1 - dt * 6);
 
     if (this.flying) {
       // Space up, Shift down; no gravity
@@ -174,12 +191,18 @@ export class PlayerController {
       if (this.enabled && this.keys.has('Space')) vy += 1;
       if (shift) vy -= 1;
       this.vel.y = vy * FLY_VERTICAL;
+      this.kb.y = 0;
     } else if (this.inWater) {
-      this.vel.y += WATER_GRAVITY * dt;
+      this.vel.y += WATER_GRAVITY * dt + this.kb.y;
       if (this.vel.y < MAX_SINK) this.vel.y = MAX_SINK;
       if (this.enabled && this.keys.has('Space')) this.vel.y = 3.2;
+      this.kb.y = 0;
     } else {
       this.vel.y += GRAVITY * dt;
+      if (Math.abs(this.kb.y) > 0.01) {
+        this.vel.y += this.kb.y;
+        this.kb.y = 0;
+      }
       if (this.enabled && this.keys.has('Space') && this.onGround) {
         this.vel.y = JUMP_VEL;
         this.onGround = false;
@@ -228,7 +251,7 @@ export class PlayerController {
         this.onSwim?.();
       }
     } else if (this.onGround) {
-      if (!this._wasOnGround && this._fallSpeed < -8) this.onLand?.();
+      if (!this._wasOnGround && this._fallSpeed < -8) this.onLand?.(this._fallSpeed);
       this._strideDist += moved;
       if (this._strideDist > 2.1) {
         this._strideDist = 0;

@@ -221,3 +221,96 @@ export function findSpawn(gen) {
   }
   return [0.5, HEIGHT - 10, 0.5];
 }
+
+// ---------- Cehennem (nether) ----------
+
+export const LAVA_LEVEL = 14;
+
+export function makeNetherGenerator(seed) {
+  const nA = createNoise3D(mulberry32(seed + 101));
+  const nB = createNoise3D(mulberry32(seed + 202));
+
+  // Solid where density clears a threshold that loosens toward the ceiling
+  // and floor: the middle stays open as big caverns.
+  function solidAt(x, y, z) {
+    if (y <= 1 || y >= HEIGHT - 2) return true;
+    const mid = HEIGHT * 0.45;
+    const bias = Math.min(1, Math.abs(y - mid) / mid);
+    const density =
+      nA(x / 44, y / 26, z / 44) * 0.72 +
+      nB(x / 13, y / 9, z / 13) * 0.32;
+    return density > 0.52 - bias * 0.42;
+  }
+
+  // scattered ceiling lights
+  function glowAt(x, y, z) {
+    let h = seed ^ Math.imul(x, 2654435761) ^ Math.imul(y, 40503) ^ Math.imul(z, 2246822519);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296 < 0.045;
+  }
+
+  return { seed, solidAt, glowAt, lavaLevel: LAVA_LEVEL };
+}
+
+export function generateNetherData(gen, cx, cz) {
+  const data = new Uint8Array(CHUNK * CHUNK * HEIGHT);
+  const x0 = cx * CHUNK;
+  const z0 = cz * CHUNK;
+
+  for (let lx = 0; lx < CHUNK; lx++) {
+    for (let lz = 0; lz < CHUNK; lz++) {
+      const wx = x0 + lx;
+      const wz = z0 + lz;
+      for (let y = 0; y < HEIGHT; y++) {
+        let id;
+        if (y === 0 || y === HEIGHT - 1) id = B.BEDROCK;
+        else if (gen.solidAt(wx, y, wz)) id = B.NETHERRACK;
+        else if (y <= gen.lavaLevel) id = B.LAVA;
+        else id = B.AIR;
+        data[idx(lx, y, lz)] = id;
+      }
+      // glowstone clusters hang from netherrack ceilings
+      for (let y = LAVA_LEVEL + 3; y < HEIGHT - 3; y++) {
+        const i = idx(lx, y, lz);
+        if (data[i] !== B.AIR) continue;
+        if (data[idx(lx, y + 1, lz)] !== B.NETHERRACK) continue;
+        if (gen.glowAt(wx, y, wz)) data[i] = B.GLOWSTONE;
+      }
+    }
+  }
+  return data;
+}
+
+// Safe arrival spot in the nether near (x, z): a 2-high air pocket standing
+// on solid ground above the lava sea.
+export function findNetherArrival(gen, x, z) {
+  for (let r = 0; r <= 14; r += 2) {
+    for (let a = 0; a < 10; a++) {
+      const ang = (a / 10) * Math.PI * 2;
+      const px = Math.round(x + Math.cos(ang) * r);
+      const pz = Math.round(z + Math.sin(ang) * r);
+      for (let y = LAVA_LEVEL + 4; y < HEIGHT - 6; y++) {
+        if (gen.solidAt(px, y, pz)) continue;
+        if (gen.solidAt(px, y + 1, pz)) continue;
+        if (!gen.solidAt(px, y - 1, pz)) continue;
+        if (y - 2 <= gen.lavaLevel) continue;
+        return [px + 0.5, y, pz + 0.5];
+      }
+    }
+  }
+  return [x + 0.5, LAVA_LEVEL + 6, z + 0.5];
+}
+
+// Surface arrival in the overworld near (x, z) — used when returning.
+export function findOverworldArrival(gen, x, z) {
+  for (let r = 0; r <= 24; r += 3) {
+    for (let a = 0; a < 10; a++) {
+      const ang = (a / 10) * Math.PI * 2;
+      const px = Math.round(x + Math.cos(ang) * r);
+      const pz = Math.round(z + Math.sin(ang) * r);
+      const h = gen.height(px, pz);
+      if (h > SEA_LEVEL + 1 && h < MOUNTAIN_LEVEL) return [px + 0.5, h + 2.5, pz + 0.5];
+    }
+  }
+  return findSpawn(gen);
+}

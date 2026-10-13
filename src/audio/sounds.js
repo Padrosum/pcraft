@@ -86,4 +86,29 @@ export const Sfx = {
   leave() {
     tone({ freq: 440, end: 280, dur: 0.18, type: 'triangle', gain: 0.1 });
   },
+  hurt() {
+    tone({ freq: jitter(320, 0.2), end: 150, dur: 0.16, type: 'sawtooth', gain: 0.14 });
+  },
+  mobHit() {
+    noiseBurst({ dur: 0.07, freq: jitter(700), gain: 0.2 });
+    tone({ freq: jitter(220), end: 130, dur: 0.08, type: 'square', gain: 0.08 });
+  },
+  mobDie() {
+    tone({ freq: jitter(260, 0.2), end: 60, dur: 0.3, type: 'sawtooth', gain: 0.12 });
+  },
+  pig() {
+    const f = jitter(420, 0.25);
+    tone({ freq: f, end: f * 1.3, dur: 0.09, type: 'square', gain: 0.06 });
+    setTimeout(() => tone({ freq: f * 1.1, end: f * 0.8, dur: 0.09, type: 'square', gain: 0.05 }), 90);
+  },
+  zombie() {
+    tone({ freq: jitter(110, 0.3), end: 70, dur: jitter(0.4, 0.3), type: 'sawtooth', gain: 0.07 });
+  },
+  portal() {
+    tone({ freq: 200, end: 800, dur: 0.5, type: 'sine', gain: 0.12 });
+    tone({ freq: 150, end: 600, dur: 0.6, type: 'triangle', gain: 0.08 });
+  },
+  heartbeat() {
+    tone({ freq: 70, end: 45, dur: 0.12, type: 'sine', gain: 0.2 });
+  },
 };

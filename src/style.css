@@ -89,6 +89,38 @@ body {
   background: rgba(25, 85, 140, 0.35);
 }
 
+#water-overlay.lava {
+  background: rgba(226, 88, 34, 0.55);
+}
+
+#hearts {
+  position: absolute;
+  bottom: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  font-size: 20px;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.heart { color: #3a1010; transition: color 0.2s; }
+.heart.full { color: #ff3b3b; }
+.heart.half { color: #a02a2a; }
+.heart.empty { color: #3a1010; }
+#hearts.red .heart.full, #hearts.red .heart.half { color: #fff; }
+#hearts.shake { animation: shake 0.35s; }
+@keyframes shake {
+  0%, 100% { transform: translateX(-50%); }
+  25% { transform: translateX(calc(-50% - 5px)); }
+  75% { transform: translateX(calc(-50% + 5px)); }
+}
+
+.death-title { color: #ff5050 !important; }
+
+#death .panel { border-color: #803030; }
+
 #crosshair {
   position: absolute;
   left: 50%;

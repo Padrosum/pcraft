@@ -12,8 +12,11 @@ export class Hud {
     this.countEl = document.getElementById('player-count');
     this.toastEl = document.getElementById('toast');
     this.waterEl = document.getElementById('water-overlay');
+    this.heartsEl = document.getElementById('hearts');
     this._toastTimer = null;
+    this._flashTimer = null;
     this.renderHotbar();
+    this.renderHearts();
 
     window.addEventListener('wheel', (e) => {
       if (document.pointerLockElement) {
@@ -70,6 +73,43 @@ export class Hud {
 
   setUnderwater(on) {
     this.waterEl.hidden = !on;
+    this.waterEl.classList.toggle('lava', false);
+  }
+
+  setInLava(on) {
+    this.waterEl.hidden = !on;
+    this.waterEl.classList.toggle('lava', on);
+  }
+
+  renderHearts() {
+    if (!this.heartsEl) return;
+    this.heartsEl.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+      const h = document.createElement('span');
+      h.className = 'heart';
+      h.textContent = '♥';
+      this.heartsEl.appendChild(h);
+    }
+  }
+
+  setHealth(hp) {
+    if (!this.heartsEl) return;
+    const hearts = this.heartsEl.children;
+    for (let i = 0; i < hearts.length; i++) {
+      const full = hp >= (i + 1) * 2;
+      const half = !full && hp === i * 2 + 1;
+      hearts[i].className = 'heart' + (full ? ' full' : half ? ' half' : ' empty');
+    }
+  }
+
+  flashDamage() {
+    if (!this.heartsEl) return;
+    this.heartsEl.classList.remove('shake');
+    void this.heartsEl.offsetWidth; // restart animation
+    this.heartsEl.classList.add('shake');
+    this.heartsEl.classList.add('red');
+    clearTimeout(this._flashTimer);
+    this._flashTimer = setTimeout(() => this.heartsEl.classList.remove('red'), 350);
   }
 
   setPlayerCount(n) {

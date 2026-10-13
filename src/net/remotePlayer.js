@@ -93,6 +93,12 @@ export class RemotePlayer {
     this.targetPitch = pitch;
   }
 
+  // show the remote player only when they're in the same dimension as us
+  setDim(dim, myDim) {
+    this.dim = dim;
+    this.group.visible = dim === myDim;
+  }
+
   update(dt) {
     const before = this.group.position.clone();
     this.group.position.lerp(this.target, Math.min(1, dt * 12));
