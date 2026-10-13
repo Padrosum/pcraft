@@ -6,8 +6,8 @@
     <title>pcraft</title>
     <meta name="description" content="pcraft — tarayıcıda arkadaşlarınla oynayabileceğin voxel dünyası" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='10' y='6' fill='%237a5538'/><rect width='16' height='6' fill='%235fae3a'/></svg>" />
-    <script type="module" crossorigin src="/pcraft/assets/index-BvSt79oJ.js"></script>
-    <link rel="stylesheet" crossorigin href="/pcraft/assets/index-bPFLXQGq.css">
+    <script type="module" crossorigin src="/pcraft/assets/index-DvsTbPJr.js"></script>
+    <link rel="stylesheet" crossorigin href="/pcraft/assets/index-aMg_m51-.css">
   </head>
   <body>
     <div id="app"></div>
@@ -20,15 +20,19 @@
         <button id="start-btn">Oda Kur</button>
         <p id="menu-status" class="status"></p>
         <div class="help">
-          <b>WASD</b> yürü · <b>Boşluk</b> zıpla/yüz · <b>Sol tık</b> kır · <b>Sağ tık</b> koy<br />
+          <b>WASD</b> yürü · <b>Shift</b> koş · <b>Ctrl</b> çömel · <b>Boşluk</b> zıpla/yüz<br />
+          <b>F</b> veya çift <b>Boşluk</b> uçuş · <b>Sol tık</b> kır/vur · <b>Sağ tık</b> koy<br />
+          <b>Portal</b> bloğu koyup içine gir: Cehennem'e gidersin<br />
           <b>1–9 / tekerlek</b> blok seç · <b>E</b> envanter · <b>Esc</b> menü
         </div>
       </div>
     </div>
 
     <div id="hud" hidden>
+      <div id="water-overlay" hidden></div>
       <div id="crosshair">+</div>
       <div id="hotbar"></div>
+      <div id="hearts"></div>
       <div id="topbar">
         <span id="player-count">👤 1</span>
         <button id="copy-link">🔗 Linki Kopyala</button>
@@ -51,6 +55,14 @@
         <button id="resume-btn">Devam Et</button>
         <button id="copy-link-2">🔗 Linki Kopyala</button>
         <p class="sub">Arkadaşların bu linkle aynı dünyaya katılır</p>
+      </div>
+    </div>
+
+    <div id="death" class="overlay" hidden>
+      <div class="panel">
+        <h2 class="death-title">Öldün!</h2>
+        <p id="death-reason" class="sub"></p>
+        <button id="respawn-btn">Yeniden Doğ</button>
       </div>
     </div>
 
