@@ -8,6 +8,7 @@ export const STACK_MAX = 64;
 export const TOOL_TIERS = { wood: 1, stone: 2, iron: 3 };
 export const TIER_SPEED = { 0: 1, 1: 2, 2: 4, 3: 6 }; // tier -> hız çarpanı
 export const SWORD_DAMAGE = { 0: 2, 1: 4, 2: 5, 3: 6 }; // yumruk 2
+export const AXE_DAMAGE = { 0: 2, 1: 5, 2: 6, 3: 7 }; // balta daha sert ama yavaş
 
 // ---- blok item id'si: 'block:<id>' ----
 export const blockItem = (id) => `block:${id}`;
@@ -77,6 +78,11 @@ export const ITEMS = {
   wood_sword: { name: 'Tahta Kılıç', tool: 'sword', tier: 1, stack: 1, category: 'tool' },
   stone_sword: { name: 'Taş Kılıç', tool: 'sword', tier: 2, stack: 1, category: 'tool' },
   iron_sword: { name: 'Demir Kılıç', tool: 'sword', tier: 3, stack: 1, category: 'tool' },
+
+  // baltalar: kılıçtan yüksek hasar, daha yavaş; odunu hızlı keser
+  wood_axe: { name: 'Tahta Balta', tool: 'axe', tier: 1, stack: 1, category: 'tool' },
+  stone_axe: { name: 'Taş Balta', tool: 'axe', tier: 2, stack: 1, category: 'tool' },
+  iron_axe: { name: 'Demir Balta', tool: 'axe', tier: 3, stack: 1, category: 'tool' },
 };
 
 export const itemName = (id) => ITEMS[id]?.name ?? id;
@@ -101,6 +107,9 @@ export const RECIPES = [
   { out: { id: 'wood_sword', count: 1 }, in: [{ id: blockItem(B.PLANKS), count: 2 }, { id: 'stick', count: 1 }] },
   { out: { id: 'stone_sword', count: 1 }, in: [{ id: blockItem(B.COBBLE), count: 2 }, { id: 'stick', count: 1 }] },
   { out: { id: 'iron_sword', count: 1 }, in: [{ id: 'iron_chunk', count: 2 }, { id: 'stick', count: 1 }] },
+  { out: { id: 'wood_axe', count: 1 }, in: [{ id: blockItem(B.PLANKS), count: 3 }, { id: 'stick', count: 2 }] },
+  { out: { id: 'stone_axe', count: 1 }, in: [{ id: blockItem(B.COBBLE), count: 3 }, { id: 'stick', count: 2 }] },
+  { out: { id: 'iron_axe', count: 1 }, in: [{ id: 'iron_chunk', count: 3 }, { id: 'stick', count: 2 }] },
 ];
 
 // ---- kırılma düşmeleri: blok -> item ----

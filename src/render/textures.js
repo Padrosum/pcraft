@@ -491,28 +491,122 @@ const ITEM_PAINTERS = {
   },
 };
 
-// araçlar: (kalem rengi tier'a göre) + kafa şekli türe göre
+// araçlar: tier'a göre metal rengi + türe göre kafa şekli.
+// 16x16 ızgarada çizilir, sonra ikon boyutuna ölçeklenir.
+const TIER_PALETTE = {
+  1: { main: '#a8824e', dark: '#6f5632', light: '#caa46a' }, // tahta
+  2: { main: '#9a9a9a', dark: '#5f5f5f', light: '#c6c6c6' }, // taş
+  3: { main: '#dfe4e9', dark: '#8f99a3', light: '#ffffff' }, // demir
+};
+const HANDLE_DARK = '#573f24';
+const HANDLE = '#7a5a34';
+const HANDLE_LIGHT = '#9a7448';
+
+// kalınlıklı çapraz çizgi (piksel ızgarasına hizalı)
+function pxLine(c, x0, y0, x1, y1, w = 1) {
+  const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+  for (let i = 0; i <= steps; i++) {
+    const t = steps === 0 ? 0 : i / steps;
+    const x = Math.round(x0 + (x1 - x0) * t);
+    const y = Math.round(y0 + (y1 - y0) * t);
+    c.fillRect(x, y, w, w);
+  }
+}
+
+function paintSword(c, p) {
+  // bıçak: merkezden sağ üste doğru
+  c.fillStyle = p.dark;
+  pxLine(c, 6, 10, 14, 2, 2);
+  c.fillStyle = p.main;
+  pxLine(c, 6, 10, 13, 3, 1);
+  c.fillStyle = p.light;
+  pxLine(c, 6, 9, 12, 3, 1); // üst (keskin) kenar parlaması
+  c.fillRect(12, 2, 2, 2);   // uç parlaması
+
+  // balçak: bıçağa dik küçük bar
+  c.fillStyle = p.dark;
+  pxLine(c, 3, 9, 7, 13, 1);
+  c.fillStyle = p.main;
+  pxLine(c, 4, 9, 7, 12, 1);
+
+  // kabza: sol alta doğru
+  c.fillStyle = HANDLE_DARK;
+  pxLine(c, 6, 11, 2, 15, 2);
+  c.fillStyle = HANDLE;
+  pxLine(c, 5, 11, 2, 14, 1);
+  c.fillStyle = HANDLE_LIGHT;
+  pxLine(c, 5, 12, 3, 14, 1);
+
+  // topuz
+  c.fillStyle = p.dark;
+  c.fillRect(1, 13, 2, 2);
+}
+
+function paintAxe(c, p) {
+  // sap: sol alttan sağ üste
+  c.fillStyle = HANDLE_DARK;
+  pxLine(c, 3, 15, 9, 8, 2);
+  c.fillStyle = HANDLE;
+  pxLine(c, 3, 14, 8, 9, 1);
+
+  // balta kafası: sapın ucunda, keskin kenar sağda
+  c.fillStyle = p.dark;
+  c.fillRect(7, 3, 6, 6);
+  c.fillStyle = p.main;
+  c.fillRect(8, 4, 4, 4);
+  c.fillStyle = p.light;
+  c.fillRect(8, 3, 4, 1);       // üst parlama
+  c.fillRect(11, 4, 2, 4);      // keskin kenar
+  c.fillStyle = p.dark;
+  c.fillRect(9, 9, 3, 1);       // sapa oturan boyun
+}
+
+function paintPick(c, p) {
+  // sap: sol alttan kafanın ortasına
+  c.fillStyle = HANDLE_DARK;
+  pxLine(c, 3, 14, 8, 5, 2);
+  c.fillStyle = HANDLE;
+  pxLine(c, 4, 14, 8, 6, 1);
+
+  // kafa: hafif kemerli, uçları aşağı kıvrık
+  c.fillStyle = p.dark;
+  pxLine(c, 2, 6, 4, 3, 2);
+  pxLine(c, 4, 3, 10, 3, 2);
+  pxLine(c, 10, 3, 12, 6, 2);
+  c.fillStyle = p.main;
+  pxLine(c, 4, 3, 10, 3, 1);
+  c.fillStyle = p.light;
+  pxLine(c, 4, 2, 10, 2, 1);
+}
+
+function paintShovel(c, p) {
+  // sap: sol alttan sağ üste
+  c.fillStyle = HANDLE_DARK;
+  pxLine(c, 3, 14, 9, 8, 2);
+  c.fillStyle = HANDLE;
+  pxLine(c, 3, 14, 9, 9, 1);
+
+  // kürek ağzı: sağ üstte yuvarlak hatlı geniş bıçak
+  c.fillStyle = p.dark;
+  c.fillRect(8, 2, 6, 8);
+  c.fillRect(7, 3, 1, 6);
+  c.fillRect(14, 3, 1, 6);
+  c.fillStyle = p.main;
+  c.fillRect(9, 3, 5, 6);
+  c.fillRect(8, 4, 1, 4);
+  c.fillStyle = p.light;
+  c.fillRect(9, 3, 5, 1);
+  c.fillRect(9, 9, 5, 1);
+}
+
 function toolPainter(kind, tier) {
-  const head = { 1: '#a8824e', 2: '#8d8d8d', 3: '#e8e8e8' }[tier] || '#8d8d8d';
-  const handle = '#8a6a3e';
+  const p = TIER_PALETTE[tier] || TIER_PALETTE[2];
   return (c) => {
-    c.fillStyle = handle;
-    for (let i = 0; i < 8; i++) c.fillRect(3 + i, 12 - i, 2, 2);
-    if (kind === 'pickaxe') {
-      c.fillStyle = head;
-      c.fillRect(3, 2, 10, 2);
-      c.fillRect(3, 4, 2, 2);
-      c.fillRect(11, 4, 2, 2);
-    } else if (kind === 'shovel') {
-      c.fillStyle = head;
-      c.fillRect(10, 2, 4, 4);
-      c.fillRect(10, 6, 2, 2);
-    } else { // sword: uzun bıçak
-      c.fillStyle = head;
-      for (let i = 0; i < 8; i++) c.fillRect(6 + i, 8 - i, 2.4, 2);
-      c.fillStyle = '#5e4630';
-      c.fillRect(4, 10, 4, 2);
-    }
+    if (kind === 'pick') paintPick(c, p);
+    else if (kind === 'shovel') paintShovel(c, p);
+    else if (kind === 'axe') paintAxe(c, p);
+    else if (kind === 'sword') paintSword(c, p);
+    else pxLine(c, 3, 13, 12, 4, 2);
   };
 }
 
@@ -524,7 +618,7 @@ export function itemIconCanvas(itemId, size = 32) {
   ctx.imageSmoothingEnabled = false;
   let paint = ITEM_PAINTERS[itemId];
   if (!paint) {
-    const m = /^(wood|stone|iron)_(pick|shovel|sword)$/.exec(itemId);
+    const m = /^(wood|stone|iron)_(pick|shovel|sword|axe)$/.exec(itemId);
     if (m) paint = toolPainter(m[2], { wood: 1, stone: 2, iron: 3 }[m[1]]);
   }
   if (paint) {

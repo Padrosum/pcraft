@@ -15,6 +15,8 @@ export class Hud {
     this.hungerEl = document.getElementById('hunger');
     this.bubblesEl = document.getElementById('bubbles');
     this.itemNameEl = document.getElementById('item-name');
+    this.attackEl = document.getElementById('attack-meter');
+    this.attackFillEl = this.attackEl?.querySelector('i') ?? null;
     this._toastTimer = null;
     this._flashTimer = null;
     this._nameTimer = null;
@@ -84,6 +86,17 @@ export class Hud {
     this.heartsEl.classList.add('red');
     clearTimeout(this._flashTimer);
     this._flashTimer = setTimeout(() => this.heartsEl.classList.remove('red'), 350);
+  }
+
+  // ---- vuruş şarjı ----
+  // t: 0..1 şarj ilerlemesi, crit: kritik vuruş mümkün mü
+  setAttackCharge(t, crit = false) {
+    if (!this.attackEl) return;
+    const ready = t >= 0.999;
+    this.attackEl.classList.add('active');
+    this.attackEl.classList.toggle('ready', ready && !crit);
+    this.attackEl.classList.toggle('crit', crit);
+    if (this.attackFillEl) this.attackFillEl.style.width = `${Math.round(t * 100)}%`;
   }
 
   // ---- hotbar: envanterden beslenir ----

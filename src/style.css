@@ -319,6 +319,32 @@ input[type='checkbox'] {
   text-shadow: 0 0 3px #000;
 }
 
+/* vuruş şarjı: crosshair altında ince bir çubuk */
+#attack-meter {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 18px);
+  transform: translateX(-50%);
+  width: 46px;
+  height: 4px;
+  background: #0009;
+  border: 1px solid #000a;
+  border-radius: 3px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+#attack-meter.active { opacity: 1; }
+#attack-meter i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: #d9dee3;
+  transition: width 0.05s linear, background 0.15s ease;
+}
+#attack-meter.ready i { background: #e8b23a; }
+#attack-meter.crit i { background: #8ce06a; }
+
 #hotbar {
   position: absolute;
   bottom: 12px;

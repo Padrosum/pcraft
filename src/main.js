@@ -9,6 +9,9 @@ import {
   findSpawn, findNetherArrival, findOverworldArrival,
 } from './world/worldgen.js';
 import { ITEMS, BLOCK_DROPS, MOB_DROPS, TIER_SPEED } from './world/items.js';
+import {
+  weaponStats, chargeProgress, isCritical, hitDamage, swingSpeed,
+} from './world/combat.js';
 import { PlayerController } from './player/controls.js';
 import { raycastVoxel } from './player/raycast.js';
 import { Sfx } from './audio/sounds.js';
@@ -404,40 +407,60 @@ function onBlockBroken(x, y, z, id) {
   }
 }
 
-const SWORD_DAMAGE_BY_TIER = { 1: 4, 2: 5, 3: 6 };
+// ---------- savaş ----------
+// Şarj tabanlı vuruş: bekleme süresi dolmadıkça hasar düşer. Kritik vuruş
+// düşerken (havada, aşağı inerken) ve koşmuyorken yapılır.
+const ATTACK_GATE = 0.18; // en kısa vuruş aralığı (sn)
+let attackTimer = 10; // son vuruştan geçen süre
+let lastAttackStats = weaponStats(null);
+
+function currentWeapon() {
+  return weaponStats(inventory.selectedStack()?.id);
+}
 
 function punchMob() {
-  if (attackCooldown > 0) return false;
-  const hit = raycastMobs(mobs.mobs, camera.position, player.lookDir(), 4);
+  const stats = currentWeapon();
+  lastAttackStats = stats;
+  const hit = raycastMobs(mobs.mobs, camera.position, player.lookDir(), stats.reach);
   if (!hit) return false;
   const blockHit = raycastVoxel(world, camera.position, player.lookDir(), hit.dist);
-  if (blockHit) return false;
-  attackCooldown = 0.25;
+  if (blockHit) return false; // blok mobun önünde
+  if (attackTimer < ATTACK_GATE) return true; // çok erken: hasar yok
+
+  const crit = isCritical(player);
+  const dmg = hitDamage(stats, attackTimer, crit);
+  attackTimer = 0;
   const dir = player.lookDir();
   dir.y = 0;
   dir.normalize();
-  const held = inventory.selectedStack();
-  const tool = held ? ITEMS[held.id] : null;
-  const dmg = tool?.tool === 'sword' ? (SWORD_DAMAGE_BY_TIER[tool.tier] ?? 2) : 1;
-  if (hit.mob.hurt(dmg, dir)) {
+  if (hit.mob.hurt(dmg, dir, stats.knockback * (crit ? 1.3 : 1))) {
     Sfx.mobHit();
-    addExhaustion(0.1);
+    if (crit) Sfx.crit();
+    addExhaustion(stats.tool === 'fist' ? 0.1 : 0.08);
+    if (config.particles) {
+      const color = crit ? '#ffe08a' : '#c04040';
+      particles.burst(
+        hit.mob.pos.x, hit.mob.pos.y + hit.mob.height * 0.6, hit.mob.pos.z,
+        new THREE.Color(color), crit ? 14 : 8,
+      );
+    }
   }
   return true;
 }
 
 let mouseHeld = false;
 let mining = null;
-let attackCooldown = 0;
 
 document.addEventListener('mousedown', (e) => {
   if (!started || !document.pointerLockElement || dead) return;
-  hand.triggerSwing();
   if (e.button === 0) {
-    if (!punchMob()) mouseHeld = true;
+    const hitMob = punchMob();
+    hand.triggerSwing(hitMob ? swingSpeed(lastAttackStats) : 3.4);
+    if (!hitMob) mouseHeld = true;
     return;
   }
   if (e.button !== 2) return;
+  hand.triggerSwing();
 
   // sağ tık: ye veya blok koy
   const held = inventory.selectedStack();
@@ -737,7 +760,7 @@ function animate() {
     fpsTime = 0;
   }
 
-  attackCooldown = Math.max(0, attackCooldown - dt);
+  attackTimer += dt;
 
   if (worldReady) {
     player.enabled = !!document.pointerLockElement && !inventory.open && !dead;
@@ -849,6 +872,10 @@ function animate() {
     hand.setMining(!!mining);
     const moveSpeed = Math.hypot(player.vel.x, player.vel.z);
     hand.update(dt, moveSpeed > 0.6, player.sprinting);
+
+    // vuruş şarjı göstergesi (crosshair altında)
+    const wstats = currentWeapon();
+    hud.setAttackCharge(chargeProgress(attackTimer, wstats.cooldown), isCritical(player));
   }
 
   renderer.render(scene, camera);

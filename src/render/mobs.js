@@ -333,15 +333,15 @@ export class Mob {
     return false;
   }
 
-  hurt(dmg, fromDir) {
+  hurt(dmg, fromDir, knockback = 6) {
     if (this.hurtTimer > 0.15) return false;
     this.hp -= dmg;
     this.hurtTimer = 0.4;
     if (this.spec.hostile === 'passive') this.fleeTimer = 3.5;
     if (this.spec.hostile === 'neutral') this.angry = true; // piglin kızarır
     if (fromDir) {
-      this.kb.x = fromDir.x * 6;
-      this.kb.z = fromDir.z * 6;
+      this.kb.x = fromDir.x * knockback;
+      this.kb.z = fromDir.z * knockback;
       this.vel.y = 4.5;
     }
     if (this.hp <= 0) {

@@ -34,9 +34,13 @@ Tarayıcıda çalışan, arkadaşlarınla oynayabileceğin voxel (Minecraft tarz
 - **Üretim (crafting):** tarif listesinden tahta, çubuk, meşale, cam,
   kumtaşı ve tahta/taş/demir **kazma, kürek, kılıç** üret
 - **Araçlar:** doğru alet blokları hızlı kırar (kazma taş, kürek toprak,
-  kürek yaprak/kum); kılıç moblara daha çok hasar verir
-- **Birinci şahıs el:** seçtiğin item elinde görünür; kazarken/vururken
-  kol sallanır, yürürken hafifçe salınır
+  kürek yaprak/kum, balta kütük/tahta); kılıç ve balta 3D model olarak elde tutulur
+- **Savaş:** kılıç hızlı ve dengeli, balta yavaş ama daha çok hasar verir ve
+  daha sert geri teper. Vuruşlar şarjla güçlenir (bekleme süresi dolunca tam
+  hasar); düşerken ve koşmuyorken yapılan vuruş **kritik** olur. Crosshair
+  altındaki ince çubuk vuruş hazırlığını gösterir
+- **Birinci şahıs el:** seçtiğin item elinde görünür; kılıç/balta gerçek 3D
+  geometriyle tutulur, kazarken/vururken kol sallanır, yürürken hafifçe salınır
 - **Can & açlık:** 10 kalp ve 10 açlık; yüksekten düşme, boğulma (hava
   kabarcıkları), lav, açlık ve mob hasarı. Yemek ye, canın dolsun
 - **10 mob:**

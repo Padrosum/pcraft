@@ -106,6 +106,12 @@ export const Sfx = {
     noiseBurst({ dur: 0.07, freq: jitter(700), gain: 0.2 });
     tone({ freq: jitter(220), end: 130, dur: 0.08, type: 'square', gain: 0.08 });
   },
+  // kritik vuruş: daha parlak, çınlayan vurgu
+  crit() {
+    noiseBurst({ dur: 0.05, freq: jitter(1800), gain: 0.16 });
+    tone({ freq: 900, end: 1500, dur: 0.09, type: 'triangle', gain: 0.09 });
+    setTimeout(() => tone({ freq: 1300, end: 1800, dur: 0.07, type: 'triangle', gain: 0.06 }), 40);
+  },
   mobDie() {
     tone({ freq: jitter(260, 0.2), end: 60, dur: 0.3, type: 'sawtooth', gain: 0.12 });
   },

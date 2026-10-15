@@ -414,6 +414,11 @@ section('moblar');
   for (let i = 0; i < 600; i++) z2.update(1 / 60, stepWorld, mplayer, mhooks);
   check('zombi tek blok duvara tırmanır', z2.pos.x > 8, `x=${z2.pos.x.toFixed(2)}`);
   check('sonsuz tırmanma yok', z2.pos.y < 14, `y=${z2.pos.y.toFixed(2)}`);
+
+  // geri tepme gücü parametresi ölçeklenir
+  const kbMob = new Mob('pig', fakeScene2, 0.5, 14, 0.5, 4);
+  kbMob.hurt(1, new THREE.Vector3(1, 0, 0), 12);
+  check('güçlü geri tepme daha uzağa iter', Math.abs(kbMob.kb.x) > 6, `kb=${kbMob.kb.x}`);
 }
 
 // ---------- itemler & üretim ----------
@@ -483,6 +488,53 @@ section('itemler & üretim');
   check('her mob türünün ganimeti var',
     ['pig', 'sheep', 'cow', 'chicken', 'zombie', 'piglin', 'hellhound', 'magma', 'blaze', 'wraith']
       .every((k) => Array.isArray(MOB_DROPS[k])));
+
+  // baltalar: item + tarif
+  check('balta itemleri tanımlı',
+    ['wood_axe', 'stone_axe', 'iron_axe'].every((id) => ITEMS[id]?.tool === 'axe'));
+  check('balta tarifleri var',
+    ['wood_axe', 'stone_axe', 'iron_axe'].every((id) => RECIPES.some((r) => r.out.id === id)));
+  check('balta tekli yığınlanır', itemStackMax('iron_axe') === 1);
+}
+
+// ---------- savaş (kombat) ----------
+section('savaş (kombat)');
+{
+  const {
+    weaponStats, chargeMultiplier, chargeProgress, hitDamage, isCritical, MIN_CHARGE, swingSpeed,
+  } = await import('../src/world/combat.js');
+  const { SWORD_DAMAGE, AXE_DAMAGE, blockItem } = await import('../src/world/items.js');
+
+  const sword = weaponStats('iron_sword');
+  check('demir kılıç istatistiği', sword.tool === 'sword' && sword.damage === SWORD_DAMAGE[3],
+    `dmg=${sword.damage}`);
+
+  const axe = weaponStats('iron_axe');
+  check('balta kılıçtan yüksek hasarlı', axe.tool === 'axe' && axe.damage === AXE_DAMAGE[3] && axe.damage > sword.damage,
+    `balta=${axe.damage} kılıç=${sword.damage}`);
+  check('balta kılıçtan yavaş', axe.cooldown > sword.cooldown);
+  check('balta geri tepmesi daha güçlü', axe.knockback > sword.knockback);
+
+  const fist = weaponStats(null);
+  check('boş el yumruk hasarı', fist.tool === 'fist' && fist.damage === 1);
+  check('silah olmayan item yumruk sayılır', weaponStats(blockItem(B.DIRT)).tool === 'fist');
+
+  check('tam şarj hasar çarpanı 1', Math.abs(chargeMultiplier(10, 0.5) - 1) < 1e-9);
+  check('şarjsız vuruş MIN_CHARGE kadar', Math.abs(chargeMultiplier(0, 0.5) - MIN_CHARGE) < 1e-9);
+  check('şarj ilerlemesi 0..1 arası', chargeProgress(10, 0.5) === 1 && chargeProgress(0.25, 0.5) === 0.5);
+
+  check('tam şarjlı vuruş taban hasar', hitDamage(sword, 1, false) === sword.damage);
+  check('acele vuruş daha az hasar', hitDamage(sword, 0, false) < sword.damage);
+  check('kritik vuruş daha çok hasar', hitDamage(sword, 1, true) > hitDamage(sword, 1, false));
+  check('hasar en az 1', hitDamage({ damage: 1, cooldown: 1 }, 0, false) === 1);
+
+  const falling = { flying: false, sprinting: false, onGround: false, vel: { y: -1 } };
+  check('havada düşerken kritik vuruş', isCritical(falling) === true);
+  check('zeminde kritik değil', isCritical({ ...falling, onGround: true }) === false);
+  check('koşarken kritik değil', isCritical({ ...falling, sprinting: true }) === false);
+  check('yükselirken kritik değil', isCritical({ ...falling, vel: { y: 1 } }) === false);
+
+  check('ağır silah daha yavaş sallanır', swingSpeed(axe) < swingSpeed(sword));
 }
 
 // ---------- yere düşen itemler & toplama ----------

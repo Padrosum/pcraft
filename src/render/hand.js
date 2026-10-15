@@ -54,6 +54,7 @@ export class Hand {
     this.itemMesh = null;
     this.swinging = false;
     this.swing = 0;
+    this.swingSpeed = 3.4;
     this.mining = false;
     this.bobPhase = 0;
     this.group.visible = false;
@@ -77,13 +78,16 @@ export class Hand {
 
     if (def.block !== undefined) {
       this.itemMesh = this._blockMesh(def.block);
+    } else if (def.tool) {
+      this.itemMesh = this._toolMesh(def);
     } else {
       this.itemMesh = this._itemMesh(id);
     }
     if (this.itemMesh) this.itemAnchor.add(this.itemMesh);
   }
 
-  triggerSwing() {
+  triggerSwing(speed = 3.4) {
+    this.swingSpeed = speed;
     this.swinging = true;
     this.swing = 0;
   }
@@ -125,14 +129,63 @@ export class Hand {
     return mesh;
   }
 
-  _dispose(mesh) {
-    this.itemAnchor.remove(mesh);
-    mesh.geometry?.dispose();
-    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    for (const m of mats) {
-      m?.map?.dispose?.();
-      m?.dispose?.();
+  // Elde tutulan araçlar için gerçek 3D model: ikon düzlemi yerine
+  // kılıç/balta geometrisi; tier'a göre metal rengi değişir.
+  _toolMesh(def) {
+    const tier = def.tier ?? 2;
+    const BLADE = { 1: 0xa8824e, 2: 0x9a9a9a, 3: 0xdfe4e9 }[tier] ?? 0x9a9a9a;
+    const DARK = { 1: 0x6f5632, 2: 0x5f5f5f, 3: 0x8f99a3 }[tier] ?? 0x5f5f5f;
+    const LIGHT = { 1: 0xcaa46a, 2: 0xc6c6c6, 3: 0xffffff }[tier] ?? 0xc6c6c6;
+    const HANDLE = 0x7a5a34;
+    const mat = (c) => new THREE.MeshLambertMaterial({ color: c });
+    const box = (w, h, d, c, x, y, z = 0, rz = 0) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
+      m.position.set(x, y, z);
+      m.rotation.z = rz;
+      return m;
+    };
+
+    const g = new THREE.Group();
+    if (def.tool === 'axe') {
+      // sap
+      g.add(box(0.055, 0.66, 0.055, HANDLE, 0, 0.03));
+      // kafa gövdesi
+      g.add(box(0.17, 0.19, 0.065, DARK, 0.09, 0.28));
+      // bıçak (öne taşan keskin kenar)
+      g.add(box(0.11, 0.23, 0.05, BLADE, 0.17, 0.28, 0, -0.08));
+      g.add(box(0.03, 0.23, 0.052, LIGHT, 0.235, 0.28, 0, -0.08)); // parlama
+      // arka mahmuz
+      g.add(box(0.09, 0.09, 0.06, DARK, -0.02, 0.3));
+    } else {
+      // kabza
+      g.add(box(0.05, 0.24, 0.05, HANDLE, 0, -0.12));
+      // topuz
+      g.add(box(0.075, 0.06, 0.075, DARK, 0, -0.26));
+      // balçak
+      g.add(box(0.23, 0.05, 0.07, DARK, 0, 0));
+      // bıçak gövdesi
+      g.add(box(0.075, 0.44, 0.024, BLADE, 0, 0.25));
+      // keskin kenar parlaması
+      g.add(box(0.022, 0.42, 0.026, LIGHT, -0.028, 0.25));
+      // uç
+      g.add(box(0.06, 0.09, 0.02, LIGHT, 0, 0.5));
     }
+    g.rotation.set(0.1, 0.3, -0.62);
+    g.scale.setScalar(0.92);
+    return g;
+  }
+
+  _dispose(obj) {
+    this.itemAnchor.remove(obj);
+    obj.traverse?.((o) => {
+      if (!o.isMesh) return;
+      o.geometry?.dispose();
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        m?.map?.dispose?.();
+        m?.dispose?.();
+      }
+    });
   }
 
   resize(aspect) {
@@ -146,7 +199,7 @@ export class Hand {
 
     if (this.mining && !this.swinging) this.triggerSwing();
     if (this.swinging) {
-      this.swing += dt * (sprinting ? 4.2 : 3.4);
+      this.swing += dt * this.swingSpeed * (sprinting ? 1.2 : 1);
       if (this.swing >= 1) {
         this.swing = 0;
         this.swinging = false;
