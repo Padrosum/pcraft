@@ -16,8 +16,30 @@ export class SettingsMenu {
   }
 
   _build() {
-    // ---- ayarlar paneli ----
-    const rows = [];
+    this._buildSettings();
+    this._buildDev();
+  }
+
+  // ---- ayarlar paneli ----
+  _buildSettings() {
+    const rows = this.el.querySelector('.set-rows');
+
+    // Satırları başlıklı gruplara ayırır. `section(başlık)` yeni bir grup
+    // açar; ardından gelen satırlar o gruba eklenir.
+    let group = null;
+    const section = (title) => {
+      group = document.createElement('div');
+      group.className = 'set-group';
+      if (title) {
+        const t = document.createElement('div');
+        t.className = 'set-group-title';
+        t.textContent = title;
+        group.appendChild(t);
+      }
+      rows.appendChild(group);
+    };
+    const put = (el) => (group ?? rows).appendChild(el);
+
     const slider = (label, key, min, max, step, fmt) => {
       const wrap = document.createElement('label');
       wrap.className = 'set-row';
@@ -36,7 +58,7 @@ export class SettingsMenu {
         this.hooks.onSetting?.(key);
       });
       wrap.append(span, input, val);
-      rows.push(wrap);
+      put(wrap);
     };
     const toggle = (label, key) => {
       const wrap = document.createElement('label');
@@ -52,7 +74,7 @@ export class SettingsMenu {
         this.hooks.onSetting?.(key);
       });
       wrap.append(span, input);
-      rows.push(wrap);
+      put(wrap);
     };
     const choice = (label, key, options) => {
       const wrap = document.createElement('label');
@@ -72,23 +94,33 @@ export class SettingsMenu {
         this.hooks.onSetting?.(key);
       });
       wrap.append(span, sel);
-      rows.push(wrap);
+      put(wrap);
     };
 
+    section('Görünüm');
     slider('Görüş mesafesi', 'renderDist', 2, 8, 1, (v) => `${v} chunk`);
     slider('Görüş açısı (FOV)', 'fov', 60, 110, 1, (v) => `${v}°`);
-    slider('Ses seviyesi', 'volume', 0, 1, 0.05, (v) => `%${Math.round(v * 100)}`);
-    slider('Fare hassasiyeti', 'sensitivity', 0.3, 2.5, 0.05, (v) => `${v.toFixed(2)}×`);
-    slider('Gün uzunluğu', 'dayMinutes', 2, 40, 1, (v) => `${v} dk`);
-    toggle('Sesi kapat', 'muted');
-    toggle('Moblar', 'mobs');
     toggle('Parçacıklar', 'particles');
     toggle('Koordinat göster', 'showCoords');
-    toggle('Açlık sistemi', 'hunger');
+
+    section('Oyun');
     choice('Oyun modu', 'gamemode', [['survival', 'Hayatta Kalma'], ['creative', 'Yaratıcı']]);
+    slider('Gün uzunluğu', 'dayMinutes', 2, 40, 1, (v) => `${v} dk`);
+    toggle('Moblar', 'mobs');
+    toggle('Açlık sistemi', 'hunger');
+
+    section('Ses ve kontrol');
+    slider('Ses seviyesi', 'volume', 0, 1, 0.05, (v) => `%${Math.round(v * 100)}`);
+    toggle('Sesi kapat', 'muted');
+    slider('Fare hassasiyeti', 'sensitivity', 0.3, 2.5, 0.05, (v) => `${v.toFixed(2)}×`);
+
+    // eylemler
+    const actions = document.createElement('div');
+    actions.className = 'set-actions';
 
     const resetBtn = document.createElement('button');
-    resetBtn.className = 'mini-btn';
+    resetBtn.type = 'button';
+    resetBtn.className = 'mini-btn full';
     resetBtn.textContent = 'Ayarları sıfırla';
     resetBtn.addEventListener('click', () => {
       resetConfig();
@@ -96,36 +128,60 @@ export class SettingsMenu {
       this.el.querySelectorAll('input[type=checkbox], select').forEach((i) => i.dispatchEvent(new Event('change')));
       this.hooks.onSetting?.('*');
     });
-    rows.push(resetBtn);
 
     const devBtn = document.createElement('button');
-    devBtn.className = 'mini-btn';
+    devBtn.type = 'button';
+    devBtn.className = 'mini-btn full';
     devBtn.textContent = '🛠 Geliştirici Menüsü';
     devBtn.addEventListener('click', () => this.openDev());
-    rows.push(devBtn);
 
-    for (const r of rows) this.el.querySelector('.set-rows').appendChild(r);
+    actions.append(resetBtn, devBtn);
+    rows.appendChild(actions);
+  }
 
-    // ---- geliştirici paneli ----
+  // ---- geliştirici paneli ----
+  _buildDev() {
     const d = this.devEl.querySelector('.dev-rows');
 
-    // saat
-    const timeRow = document.createElement('div');
-    timeRow.className = 'dev-row';
-    timeRow.innerHTML = '<span>Günün saati:</span>';
-    for (const [label, t] of [['🌅 Sabah', 0.02], ['☀️ Öğle', 0.25], ['🌇 Akşam', 0.48], ['🌙 Gece', 0.75]]) {
+    const section = (title) => {
+      const g = document.createElement('div');
+      g.className = 'dev-group';
+      const t = document.createElement('div');
+      t.className = 'dev-group-title';
+      t.textContent = title;
+      g.appendChild(t);
+      d.appendChild(g);
+      return g;
+    };
+    const row = (parent, label) => {
+      const r = document.createElement('div');
+      r.className = 'dev-row';
+      const span = document.createElement('span');
+      span.textContent = label;
+      r.appendChild(span);
+      parent.appendChild(r);
+      return r;
+    };
+    const mini = (parent, label, onClick) => {
       const b = document.createElement('button');
+      b.type = 'button';
       b.className = 'mini-btn';
       b.textContent = label;
-      b.addEventListener('click', () => this.hooks.setTime?.(t));
-      timeRow.appendChild(b);
+      b.addEventListener('click', onClick);
+      parent.appendChild(b);
+      return b;
+    };
+
+    // saat
+    const timeGroup = section('Zaman');
+    const timeRow = row(timeGroup, 'Günün saati:');
+    for (const [label, t] of [['🌅 Sabah', 0.02], ['☀️ Öğle', 0.25], ['🌇 Akşam', 0.48], ['🌙 Gece', 0.75]]) {
+      mini(timeRow, label, () => this.hooks.setTime?.(t));
     }
-    d.appendChild(timeRow);
 
     // ışınlanma
-    const tp = document.createElement('div');
-    tp.className = 'dev-row';
-    tp.innerHTML = '<span>Işınlan:</span>';
+    const posGroup = section('Konum');
+    const tp = row(posGroup, 'Işınlan:');
     this.tpX = document.createElement('input');
     this.tpY = document.createElement('input');
     this.tpZ = document.createElement('input');
@@ -133,33 +189,27 @@ export class SettingsMenu {
       inp.type = 'number'; inp.className = 'dev-num'; inp.placeholder = '0';
       tp.appendChild(inp);
     }
-    const tpBtn = document.createElement('button');
-    tpBtn.className = 'mini-btn';
-    tpBtn.textContent = 'Git';
-    tpBtn.addEventListener('click', () => {
+    mini(tp, 'Git', () => {
       const x = Number(this.tpX.value) || 0;
       const y = Number(this.tpY.value) || 40;
       const z = Number(this.tpZ.value) || 0;
       this.hooks.teleport?.(x, y, z);
     });
-    tp.appendChild(tpBtn);
-    d.appendChild(tp);
 
-    // boyut
-    const dimRow = document.createElement('div');
-    dimRow.className = 'dev-row';
-    dimRow.innerHTML = '<span>Boyut:</span>';
-    const dimBtn = document.createElement('button');
-    dimBtn.className = 'mini-btn';
-    dimBtn.textContent = 'Ana Dünya ⇄ Cehennem';
-    dimBtn.addEventListener('click', () => this.hooks.toggleDim?.());
-    dimRow.appendChild(dimBtn);
-    d.appendChild(dimRow);
+    // dünya
+    const worldGroup = section('Dünya');
+    const dimRow = row(worldGroup, 'Boyut:');
+    mini(dimRow, 'Ana Dünya ⇄ Cehennem', () => this.hooks.toggleDim?.());
+    const newRow = row(worldGroup, 'Yeni dünya:');
+    mini(newRow, 'Seed yenile', () => {
+      if (confirm('Bu odanın kaydı silinip yeni bir seed ile başlanacak. Emin misin?')) {
+        this.hooks.newWorld?.();
+      }
+    });
 
     // item verme
-    const give = document.createElement('div');
-    give.className = 'dev-row';
-    give.innerHTML = '<span>Item ver:</span>';
+    const itemGroup = section('Item & Mob');
+    const give = row(itemGroup, 'Item ver:');
     this.giveSel = document.createElement('select');
     this.giveSel.className = 'dev-sel';
     for (const [id, def] of Object.entries(ITEMS)) {
@@ -170,19 +220,13 @@ export class SettingsMenu {
     this.giveCount = document.createElement('input');
     this.giveCount.type = 'number'; this.giveCount.value = 64; this.giveCount.min = 1;
     this.giveCount.className = 'dev-num';
-    const giveBtn = document.createElement('button');
-    giveBtn.className = 'mini-btn';
-    giveBtn.textContent = 'Ver';
-    giveBtn.addEventListener('click', () => {
+    give.append(this.giveSel, this.giveCount);
+    mini(give, 'Ver', () => {
       this.hooks.give?.(this.giveSel.value, Number(this.giveCount.value) || 1);
     });
-    give.append(this.giveSel, this.giveCount, giveBtn);
-    d.appendChild(give);
 
     // mob çağırma
-    const mobRow = document.createElement('div');
-    mobRow.className = 'dev-row';
-    mobRow.innerHTML = '<span>Mob çağır:</span>';
+    const mobRow = row(itemGroup, 'Mob çağır:');
     this.mobSel = document.createElement('select');
     this.mobSel.className = 'dev-sel';
     for (const kind of Object.keys(SPECIES)) {
@@ -190,18 +234,14 @@ export class SettingsMenu {
       o.value = kind; o.textContent = kind;
       this.mobSel.appendChild(o);
     }
-    const mobBtn = document.createElement('button');
-    mobBtn.className = 'mini-btn';
-    mobBtn.textContent = 'Çağır';
-    mobBtn.addEventListener('click', () => this.hooks.spawnMob?.(this.mobSel.value));
-    mobRow.append(this.mobSel, mobBtn);
-    d.appendChild(mobRow);
+    mobRow.appendChild(this.mobSel);
+    mini(mobRow, 'Çağır', () => this.hooks.spawnMob?.(this.mobSel.value));
 
     // ek dev araçları
-    const extra = document.createElement('div');
-    extra.className = 'dev-row';
-    extra.innerHTML = '<span>Diğer:</span>';
+    const playerGroup = section('Oyuncu');
+    const extra = row(playerGroup, 'Diğer:');
     const godBtn = document.createElement('button');
+    godBtn.type = 'button';
     godBtn.className = 'mini-btn';
     const godLabel = () => { godBtn.textContent = config.god ? 'God: AÇIK' : 'God: kapalı'; };
     godLabel();
@@ -210,24 +250,9 @@ export class SettingsMenu {
       saveConfig();
       godLabel();
     });
-    const killBtn = document.createElement('button');
-    killBtn.className = 'mini-btn';
-    killBtn.textContent = 'Mobları sil';
-    killBtn.addEventListener('click', () => this.hooks.killMobs?.());
-    const clearBtn = document.createElement('button');
-    clearBtn.className = 'mini-btn';
-    clearBtn.textContent = 'Envanteri boşalt';
-    clearBtn.addEventListener('click', () => this.hooks.clearInv?.());
-    const worldBtn = document.createElement('button');
-    worldBtn.className = 'mini-btn';
-    worldBtn.textContent = 'Yeni dünya (seed)';
-    worldBtn.addEventListener('click', () => {
-      if (confirm('Bu odanın kaydı silinip yeni bir seed ile başlanacak. Emin misin?')) {
-        this.hooks.newWorld?.();
-      }
-    });
-    extra.append(godBtn, killBtn, clearBtn, worldBtn);
-    d.appendChild(extra);
+    extra.appendChild(godBtn);
+    mini(extra, 'Mobları sil', () => this.hooks.killMobs?.());
+    mini(extra, 'Envanteri boşalt', () => this.hooks.clearInv?.());
 
     // şifre formu
     this.devEl.querySelector('#dev-close').addEventListener('click', () => this.closeDev());

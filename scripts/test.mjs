@@ -419,7 +419,10 @@ section('moblar');
 // ---------- itemler & üretim ----------
 section('itemler & üretim');
 {
-  const { ITEMS, RECIPES, canCraft, craft, blockItem, BLOCK_DROPS, MOB_DROPS } = await import('../src/world/items.js');
+  const {
+    ITEMS, RECIPES, canAdd, canCraft, canCraftWithOutput, craft,
+    addToSlots, blockItem, BLOCK_DROPS, MOB_DROPS, itemStackMax,
+  } = await import('../src/world/items.js');
 
   check('her tarifin çıktısı ve girdileri tanımlı',
     RECIPES.every((r) => ITEMS[r.out.id] && r.in.every((i) => ITEMS[i.id])));
@@ -446,6 +449,29 @@ section('itemler & üretim');
   check('tahta azaldı', total(blockItem(B.PLANKS)) === 4);
   check('tahta kazma üretilebilir', canCraft(slots, RECIPES.find((r) => r.out.id === 'wood_pick')));
 
+  // yığın kuralları ve üretim çıktısı güvenliği
+  check('aletler tekli yığınlanır', itemStackMax('wood_pick') === 1);
+  slots = new Array(36).fill(null).map(() => slot(blockItem(B.LOG), 64));
+  check('dolu envanter yeni item kabul etmez', !canAdd(slots, blockItem(B.LOG), 1));
+  slots = new Array(36).fill(null).map((_, i) => slot(
+    i === 0 ? blockItem(B.LOG) : blockItem(B.COBBLE), i === 0 ? 2 : 64,
+  ));
+  const blockedRecipe = RECIPES[0];
+  check('üretim çıktısı için yer yoksa tarif kapalı', !canCraftWithOutput(slots, blockedRecipe));
+  const beforeBlocked = slots.map((s) => (s ? { ...s } : null));
+  check('yer yok kontrolü envanteri değiştirmez', JSON.stringify(slots) === JSON.stringify(beforeBlocked));
+  slots = new Array(36).fill(null);
+  slots[0] = slot(blockItem(B.LOG), 1);
+  const left = addToSlots(slots, blockItem(B.CACTUS), 2);
+  check('kaktüs item olarak eklenebilir', left === 0 && slots[1]?.id === blockItem(B.CACTUS));
+
+  const placeable = Object.keys(BLOCKS)
+    .map(Number)
+    .filter((id) => BLOCKS[id].place);
+  check('yerleştirilebilir her blok item kataloğunda',
+    placeable.every((id) => ITEMS[blockItem(id)]),
+    JSON.stringify(placeable.filter((id) => !ITEMS[blockItem(id)])));
+
   // blok düşmeleri: kırılabilir blokların karşılığı var
   const breakable = Object.keys(BLOCKS)
     .map(Number)
@@ -457,6 +483,49 @@ section('itemler & üretim');
   check('her mob türünün ganimeti var',
     ['pig', 'sheep', 'cow', 'chicken', 'zombie', 'piglin', 'hellhound', 'magma', 'blaze', 'wraith']
       .every((k) => Array.isArray(MOB_DROPS[k])));
+}
+
+// ---------- yere düşen itemler & toplama ----------
+section('yere düşen itemler');
+{
+  const { GroundItems } = await import('../src/render/groundItems.js');
+  const flat = { getBlock: (x, y) => (y <= 10 ? B.STONE : B.AIR) };
+  const make = () => {
+    const g = new GroundItems(fakeScene, fakeAtlas);
+    g.iconProvider = () => ({});
+    return g;
+  };
+  const step = (g, onCollect, playerX = 0.5, playerZ = 0.5) => {
+    const p = { pos: new THREE.Vector3(playerX, 11, playerZ), dead: false };
+    for (let i = 0; i < 400 && g.items.size; i++) g.update(1 / 60, flat, p, onCollect);
+  };
+
+  // ayağının dibindeki item göğüs hizasında asılı kalmamalı, toplanmalı
+  const beside = make();
+  let got = null;
+  beside.spawn('iron_chunk', 1, 0.5, 11, 0.5);
+  step(beside, (id, count) => { got = { id, count }; return 0; });
+  check('düşen item oyuncunun dibinde toplanır', got?.id === 'iron_chunk' && beside.items.size === 0,
+    JSON.stringify(got));
+
+  const oneOff = make();
+  let got2 = null;
+  oneOff.spawn('iron_chunk', 2, 0.5, 11, -1);
+  step(oneOff, (id, count) => { got2 = { id, count }; return 0; });
+  check('bir blok ötedeki item çekilip toplanır', got2?.id === 'iron_chunk' && got2.count === 2 && oneOff.items.size === 0,
+    JSON.stringify(got2));
+
+  const farAway = make();
+  let got3 = null;
+  farAway.spawn('iron_chunk', 1, 6, 11, 6);
+  step(farAway, (id, count) => { got3 = { id, count }; return 0; });
+  check('menzil dışındaki item yerde kalır', !got3 && farAway.items.size === 1);
+
+  const full = make();
+  full.spawn('iron_chunk', 4, 0.5, 11, 0.5);
+  step(full, () => 4); // envanter hiç kabul etmiyor
+  check('envanter doluyken item yerde kalır (kısmi toplama)',
+    full.items.size === 1 && [...full.items.values()][0].count === 4);
 }
 
 console.log(failures === 0 ? '\nTÜMÜ GEÇTİ' : `\n${failures} TEST BAŞARISIZ`);

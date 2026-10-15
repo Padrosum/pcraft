@@ -7,6 +7,12 @@ const GRAVITY = -18;
 const LIFETIME = 90;
 const MAGNET_DIST = 2.2;
 const COLLECT_DIST = 0.55;
+// itemler ayakların biraz üstüne (göğüs hizasına) doğru çekilir; hem çekim
+// hem toplama kontrolü aynı noktaya göre yapılmalı, yoksa item havada asılı kalır
+const COLLECT_LIFT = 0.9;
+
+const _target = new THREE.Vector3();
+const _dir = new THREE.Vector3();
 
 // Kırılan blokların ve mobların yere düşen, dönen, oyuncuya manyetik
 // olarak çekilen item varlıkları.
@@ -105,14 +111,15 @@ export class GroundItems {
         continue;
       }
 
-      const dist = e.mesh.position.distanceTo(player.pos);
+      // çekim ve toplama aynı hedef noktaya göre ölçülür
+      _target.copy(player.pos);
+      _target.y += COLLECT_LIFT;
+      const dist = e.mesh.position.distanceTo(_target);
       // manyetik çekim
       if (e.age > 0.5 && dist < MAGNET_DIST && !player.dead) {
-        const dir = new THREE.Vector3().subVectors(player.pos, e.mesh.position);
-        dir.y += 0.9;
-        dir.normalize();
-        e.mesh.position.addScaledVector(dir, dt * 7);
-        if (dist < COLLECT_DIST) {
+        _dir.subVectors(_target, e.mesh.position).normalize();
+        e.mesh.position.addScaledVector(_dir, dt * 7);
+        if (e.mesh.position.distanceTo(_target) < COLLECT_DIST) {
           const left = onCollect ? onCollect(e.itemId, e.count) : 0;
           if (left <= 0) {
             this.remove(id);

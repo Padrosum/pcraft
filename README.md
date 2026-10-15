@@ -35,6 +35,8 @@ Tarayıcıda çalışan, arkadaşlarınla oynayabileceğin voxel (Minecraft tarz
   kumtaşı ve tahta/taş/demir **kazma, kürek, kılıç** üret
 - **Araçlar:** doğru alet blokları hızlı kırar (kazma taş, kürek toprak,
   kürek yaprak/kum); kılıç moblara daha çok hasar verir
+- **Birinci şahıs el:** seçtiğin item elinde görünür; kazarken/vururken
+  kol sallanır, yürürken hafifçe salınır
 - **Can & açlık:** 10 kalp ve 10 açlık; yüksekten düşme, boğulma (hava
   kabarcıkları), lav, açlık ve mob hasarı. Yemek ye, canın dolsun
 - **10 mob:**

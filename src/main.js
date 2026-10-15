@@ -17,6 +17,7 @@ import { Inventory } from './ui/inventory.js';
 import { Menu } from './ui/menu.js';
 import { SettingsMenu } from './ui/panels.js';
 import { GroundItems } from './render/groundItems.js';
+import { Hand } from './render/hand.js';
 import {
   getRoomFromHash, newRoomId, setRoomHash, roomLink, loadSave, storeSave,
 } from './net/room.js';
@@ -43,6 +44,7 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  hand.resize(camera.aspect);
 });
 
 const atlas = createAtlas();
@@ -56,6 +58,10 @@ groundItems.iconProvider = (id) => {
   if (def?.block !== undefined) return null; // blok itemleri küp olarak çizilir
   return itemIconCanvas(id, 32);
 };
+
+// birinci şahıs el + elde tutulan item
+const hand = new Hand(atlas.canvas);
+hand.resize(camera.aspect);
 
 player.onJump = () => { Sfx.jump(); addExhaustion(0.2); };
 player.onSplash = (fallSpeed) => (fallSpeed < -4 ? Sfx.splash() : Sfx.swim());
@@ -96,6 +102,9 @@ const hud = new Hud(atlas.canvas);
 const inventory = new Inventory(atlas.canvas);
 const pauseEl = document.getElementById('pause');
 inventory.onChange = () => refreshHotbar();
+inventory.onToggle = (open) => {
+  if (!open) lockPointer();
+};
 refreshHotbar();
 
 player.onFly = (flying) => hud.toast(
@@ -104,6 +113,7 @@ player.onFly = (flying) => hud.toast(
 
 function refreshHotbar() {
   hud.setHotbar(inventory.slots.slice(0, 9), inventory.selected);
+  hand.setItem(inventory.selectedStack()?.id ?? null);
 }
 
 function lockPointer() {
@@ -422,6 +432,7 @@ let attackCooldown = 0;
 
 document.addEventListener('mousedown', (e) => {
   if (!started || !document.pointerLockElement || dead) return;
+  hand.triggerSwing();
   if (e.button === 0) {
     if (!punchMob()) mouseHeld = true;
     return;
@@ -473,7 +484,6 @@ document.addEventListener('keydown', (e) => {
   if (!started || dead) return;
   if (e.code === 'KeyE') {
     inventory.toggle();
-    if (!inventory.open) lockPointer();
     return;
   }
   if (e.code.startsWith('Digit')) {
@@ -833,9 +843,16 @@ function animate() {
     }
 
     hud.setCoords(player.pos, fps, player.flying);
+
+    // birinci şahıs el: sadece oynanırken görünür
+    hand.setVisible(started && !dead && !inventory.open);
+    hand.setMining(!!mining);
+    const moveSpeed = Math.hypot(player.vel.x, player.vel.z);
+    hand.update(dt, moveSpeed > 0.6, player.sprinting);
   }
 
   renderer.render(scene, camera);
+  hand.render(renderer);
 }
 
 animate();

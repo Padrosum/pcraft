@@ -13,16 +13,22 @@
 
     <div id="menu" class="overlay">
       <div class="panel">
-        <h1>pcraft</h1>
-        <p class="sub">tarayıcıda, arkadaşlarınla</p>
-        <input id="name-input" maxlength="16" placeholder="İsmin" autocomplete="off" />
-        <button id="start-btn">Oda Kur</button>
-        <p id="menu-status" class="status"></p>
-        <div class="help">
-          <b>WASD</b> yürü · <b>Shift</b> koş · <b>Ctrl</b> çömel · <b>Boşluk</b> zıpla/yüz<br />
-          <b>F</b> veya çift <b>Boşluk</b> uçuş · <b>Sol tık</b> kır/vur · <b>Sağ tık</b> koy/ye<br />
-          <b>E</b> envanter &amp; üretim · <b>1–9 / tekerlek</b> eşya seç · <b>Esc</b> menü<br />
-          Blok kır, item topla, <b>üret</b> ile alet yap. <b>Portal</b> bloğuyla Cehennem'e geç.
+        <div class="panel-head center">
+          <h1>pcraft</h1>
+          <p class="sub">tarayıcıda, arkadaşlarınla</p>
+        </div>
+        <div class="panel-body">
+          <input id="name-input" maxlength="16" placeholder="İsmin" autocomplete="off" />
+          <button id="start-btn">Oda Kur</button>
+          <p id="menu-status" class="status"></p>
+        </div>
+        <div class="panel-foot">
+          <div class="help">
+            <b>WASD</b> yürü · <b>Shift</b> koş · <b>Ctrl</b> çömel · <b>Boşluk</b> zıpla/yüz<br />
+            <b>F</b> veya çift <b>Boşluk</b> uçuş · <b>Sol tık</b> kır/vur · <b>Sağ tık</b> koy/ye<br />
+            <b>E</b> envanter &amp; üretim · <b>1–9 / tekerlek</b> eşya seç · <b>Esc</b> menü<br />
+            Blok kır, item topla, <b>üret</b> ile alet yap. <b>Portal</b> bloğuyla Cehennem'e geç.
+          </div>
         </div>
       </div>
     </div>
@@ -48,42 +54,64 @@
     <div id="inventory" class="overlay" hidden></div>
 
     <div id="settings" class="overlay" hidden>
-      <div class="panel">
-        <h2>Ayarlar</h2>
-        <div class="set-rows"></div>
-        <button id="settings-close">Geri</button>
+      <div class="panel settings-panel">
+        <div class="panel-head">
+          <p class="eyebrow">Oyun</p>
+          <h2>Ayarlar</h2>
+        </div>
+        <div class="panel-body scroll">
+          <div class="set-rows"></div>
+        </div>
+        <div class="panel-foot">
+          <button id="settings-close" class="secondary">Geri</button>
+        </div>
       </div>
     </div>
 
     <div id="devmenu" class="overlay" hidden>
       <div class="panel dev-panel">
-        <h2>🛠 Geliştirici Menüsü</h2>
-        <div id="dev-gate">
+        <div class="panel-head">
+          <p class="eyebrow">Geliştirici</p>
+          <h2>🛠 Geliştirici Menüsü</h2>
+        </div>
+        <div id="dev-gate" class="panel-body">
           <p class="sub">Bu menü şifre korumalı</p>
           <input id="dev-pass" type="password" placeholder="Şifre" autocomplete="off" />
           <p id="dev-err" class="dev-err"></p>
           <button id="dev-unlock">Giriş</button>
         </div>
-        <div class="dev-rows" hidden></div>
-        <button id="dev-close">Geri</button>
+        <div class="dev-rows panel-body scroll" hidden></div>
+        <div class="panel-foot">
+          <button id="dev-close" class="secondary">Geri</button>
+        </div>
       </div>
     </div>
 
     <div id="pause" class="overlay" hidden>
-      <div class="panel">
-        <h2>Duraklatıldı</h2>
-        <button id="resume-btn">Devam Et</button>
-        <button id="settings-btn">⚙ Ayarlar</button>
-        <button id="copy-link-2">🔗 Linki Kopyala</button>
-        <p class="sub">Arkadaşların bu linkle aynı dünyaya katılır</p>
+      <div class="panel pause-panel">
+        <div class="panel-head center">
+          <h2>Duraklatıldı</h2>
+        </div>
+        <div class="panel-body">
+          <button id="resume-btn">Devam Et</button>
+          <button id="settings-btn" class="secondary">⚙ Ayarlar</button>
+          <button id="copy-link-2" class="secondary">🔗 Linki Kopyala</button>
+        </div>
+        <div class="panel-foot center">
+          <p class="sub">Arkadaşların bu linkle aynı dünyaya katılır</p>
+        </div>
       </div>
     </div>
 
     <div id="death" class="overlay" hidden>
-      <div class="panel">
-        <h2 class="death-title">Öldün!</h2>
-        <p id="death-reason" class="sub"></p>
-        <button id="respawn-btn">Yeniden Doğ</button>
+      <div class="panel death-panel">
+        <div class="panel-head center">
+          <h2 class="death-title">Öldün!</h2>
+          <p id="death-reason" class="sub"></p>
+        </div>
+        <div class="panel-body">
+          <button id="respawn-btn">Yeniden Doğ</button>
+        </div>
       </div>
     </div>
 

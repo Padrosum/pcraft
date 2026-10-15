@@ -14,7 +14,7 @@ export const blockItem = (id) => `block:${id}`;
 export const itemOfBlock = (blockId) => `block:${blockId}`;
 
 function defBlock(blockId) {
-  return { name: BLOCKS[blockId].name, block: blockId };
+  return { name: BLOCKS[blockId].name, block: blockId, category: 'block' };
 }
 
 // ---- item kayıtları ----
@@ -35,6 +35,7 @@ export const ITEMS = {
   [blockItem(B.SANDSTONE)]: defBlock(B.SANDSTONE),
   [blockItem(B.COAL_ORE)]: defBlock(B.COAL_ORE),
   [blockItem(B.IRON_ORE)]: defBlock(B.IRON_ORE),
+  [blockItem(B.CACTUS)]: defBlock(B.CACTUS),
   [blockItem(B.GLOWSTONE)]: defBlock(B.GLOWSTONE),
   [blockItem(B.NETHERRACK)]: defBlock(B.NETHERRACK),
   [blockItem(B.OBSIDIAN)]: defBlock(B.OBSIDIAN),
@@ -46,39 +47,42 @@ export const ITEMS = {
   [blockItem(B.NETHER_TORCH)]: defBlock(B.NETHER_TORCH),
 
   // malzemeler
-  stick: { name: 'Çubuk' },
-  coal: { name: 'Kömür' },
-  iron_chunk: { name: 'Demir Parçası' },
-  feather: { name: 'Tüy' },
-  bone: { name: 'Kemik' },
-  blaze_rod: { name: 'Alev Çubuğu' },
-  magma_powder: { name: 'Magma Tozu' },
-  wraith_dust: { name: 'Hayalet Tozu' },
+  stick: { name: 'Çubuk', category: 'material' },
+  coal: { name: 'Kömür', category: 'material' },
+  iron_chunk: { name: 'Demir Parçası', category: 'material' },
+  feather: { name: 'Tüy', category: 'material' },
+  bone: { name: 'Kemik', category: 'material' },
+  blaze_rod: { name: 'Alev Çubuğu', category: 'material' },
+  magma_powder: { name: 'Magma Tozu', category: 'material' },
+  wraith_dust: { name: 'Hayalet Tozu', category: 'material' },
 
   // yemekler (food: açlık puanı)
-  porkchop: { name: 'Pirzola', food: 4 },
-  beef: { name: 'Biftek', food: 4 },
-  chicken_meat: { name: 'Tavuk', food: 3 },
-  mutton: { name: 'Kuzu Pirzolası', food: 3 },
-  rotten_flesh: { name: 'Çürük Et', food: 2 },
+  porkchop: { name: 'Pirzola', food: 4, category: 'food' },
+  beef: { name: 'Biftek', food: 4, category: 'food' },
+  chicken_meat: { name: 'Tavuk', food: 3, category: 'food' },
+  mutton: { name: 'Kuzu Pirzolası', food: 3, category: 'food' },
+  rotten_flesh: { name: 'Çürük Et', food: 2, category: 'food' },
 
   // kazmalar: doğru blok sınıfında hız çarpanı
-  wood_pick: { name: 'Tahta Kazma', tool: 'pickaxe', tier: 1 },
-  stone_pick: { name: 'Taş Kazma', tool: 'pickaxe', tier: 2 },
-  iron_pick: { name: 'Demir Kazma', tool: 'pickaxe', tier: 3 },
+  wood_pick: { name: 'Tahta Kazma', tool: 'pickaxe', tier: 1, stack: 1, category: 'tool' },
+  stone_pick: { name: 'Taş Kazma', tool: 'pickaxe', tier: 2, stack: 1, category: 'tool' },
+  iron_pick: { name: 'Demir Kazma', tool: 'pickaxe', tier: 3, stack: 1, category: 'tool' },
 
   // kürekler
-  wood_shovel: { name: 'Tahta Kürek', tool: 'shovel', tier: 1 },
-  stone_shovel: { name: 'Taş Kürek', tool: 'shovel', tier: 2 },
-  iron_shovel: { name: 'Demir Kürek', tool: 'shovel', tier: 3 },
+  wood_shovel: { name: 'Tahta Kürek', tool: 'shovel', tier: 1, stack: 1, category: 'tool' },
+  stone_shovel: { name: 'Taş Kürek', tool: 'shovel', tier: 2, stack: 1, category: 'tool' },
+  iron_shovel: { name: 'Demir Kürek', tool: 'shovel', tier: 3, stack: 1, category: 'tool' },
 
   // kılıçlar: hasar
-  wood_sword: { name: 'Tahta Kılıç', tool: 'sword', tier: 1 },
-  stone_sword: { name: 'Taş Kılıç', tool: 'sword', tier: 2 },
-  iron_sword: { name: 'Demir Kılıç', tool: 'sword', tier: 3 },
+  wood_sword: { name: 'Tahta Kılıç', tool: 'sword', tier: 1, stack: 1, category: 'tool' },
+  stone_sword: { name: 'Taş Kılıç', tool: 'sword', tier: 2, stack: 1, category: 'tool' },
+  iron_sword: { name: 'Demir Kılıç', tool: 'sword', tier: 3, stack: 1, category: 'tool' },
 };
 
 export const itemName = (id) => ITEMS[id]?.name ?? id;
+export const itemStackMax = (id) => ITEMS[id]?.stack ?? STACK_MAX;
+export const itemCategory = (id) => ITEMS[id]?.category
+  ?? (ITEMS[id]?.food ? 'food' : ITEMS[id]?.tool ? 'tool' : 'material');
 
 // ---- tarifler: shapeless, malzeme sayısıyla eşleşme ----
 export const RECIPES = [
@@ -150,6 +154,59 @@ export function canCraft(slots, recipe) {
     have.set(s.id, (have.get(s.id) || 0) + s.count);
   }
   return recipe.in.every(({ id, count }) => (have.get(id) || 0) >= count);
+}
+
+// Bir item, mevcut yığınları doldurarak boş slotlara sığar mı?
+// Bu fonksiyon slotları değiştirir; üretim önizlemesi için kopya slot dizisi verilir.
+export function canAdd(slots, id, count) {
+  let left = Math.max(0, Math.floor(Number(count) || 0));
+  const max = itemStackMax(id);
+  for (const s of slots) {
+    if (left <= 0) break;
+    if (s?.id === id) left -= Math.max(0, max - s.count);
+  }
+  for (const s of slots) {
+    if (left <= 0) break;
+    if (!s) left -= max;
+  }
+  return left <= 0;
+}
+
+export function addToSlots(slots, id, count) {
+  if (!ITEMS[id]) return Math.max(0, Math.floor(Number(count) || 0));
+  let left = Math.max(0, Math.floor(Number(count) || 0));
+  const max = itemStackMax(id);
+  for (let i = 0; i < slots.length && left > 0; i++) {
+    const s = slots[i];
+    if (!s || s.id !== id || s.count >= max) continue;
+    const put = Math.min(max - s.count, left);
+    s.count += put;
+    left -= put;
+  }
+  for (let i = 0; i < slots.length && left > 0; i++) {
+    if (slots[i]) continue;
+    const put = Math.min(max, left);
+    slots[i] = { id, count: put };
+    left -= put;
+  }
+  return left;
+}
+
+export function canCraftWithOutput(slots, recipe) {
+  if (!canCraft(slots, recipe)) return false;
+  const preview = slots.map((s) => (s ? { ...s } : null));
+  for (const { id, count } of recipe.in) {
+    let left = count;
+    for (let i = 0; i < preview.length && left > 0; i++) {
+      const s = preview[i];
+      if (!s || s.id !== id) continue;
+      const take = Math.min(s.count, left);
+      s.count -= take;
+      left -= take;
+      if (s.count <= 0) preview[i] = null;
+    }
+  }
+  return canAdd(preview, recipe.out.id, recipe.out.count);
 }
 
 export function craft(slots, recipe) {
