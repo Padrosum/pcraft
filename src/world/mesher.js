@@ -63,6 +63,10 @@ const FACES = [
 
 const WATER_TOP = 14 / 16;
 
+// Ambient occlusion: bir yüzey köşesinin komşu bloklarca ne kadar
+// kapatıldığına göre karartma çarpanı (0 = köşeye sıkışmış, 3 = açık).
+const AO_LEVELS = [0.5, 0.7, 0.85, 1.0];
+
 function makeBucket() {
   return { positions: [], normals: [], uvs: [], colors: [], indices: [] };
 }
@@ -85,23 +89,52 @@ export function meshChunk(world, cx, cz, tileUV) {
   const chunk = world.getChunk(cx, cz);
   const data = chunk.data;
 
-  // Neighbour lookups used to go through world.getBlock per face (floor,
-  // bounds and two Map lookups each). Grab the 4 side chunks once and read
-  // their raw arrays directly; offsets here are never diagonal, so at most
-  // one coordinate can wrap.
+  // Yan komşu chunk'lar (hızlı yol)
   const nWest = world.getChunk(cx - 1, cz);
   const nEast = world.getChunk(cx + 1, cz);
   const nNorth = world.getChunk(cx, cz - 1);
   const nSouth = world.getChunk(cx, cz + 1);
 
+  // Neighbour lookups used to go through world.getBlock per face (floor,
+  // bounds and two Map lookups each). We read the current chunk's raw array
+  // for the common case and pull in side chunks directly for the rest. AO
+  // samples diagonal neighbours too, so a full 3x3 chunk neighbourhood can
+  // be touched (chunks are fetched lazily by getChunk).
   function blockAt(lx, y, lz) {
     if (y < 0) return B.BEDROCK;
     if (y >= HEIGHT) return B.AIR;
-    if (lx < 0) return nWest.data[blockIndex(CHUNK - 1, y, lz)];
-    if (lx >= CHUNK) return nEast.data[blockIndex(0, y, lz)];
-    if (lz < 0) return nNorth.data[blockIndex(lx, y, CHUNK - 1)];
-    if (lz >= CHUNK) return nSouth.data[blockIndex(lx, y, 0)];
-    return data[blockIndex(lx, y, lz)];
+    if (lx >= 0 && lx < CHUNK && lz >= 0 && lz < CHUNK) {
+      return data[blockIndex(lx, y, lz)];
+    }
+    if (lz >= 0 && lz < CHUNK) {
+      if (lx < 0) return nWest.data[blockIndex(CHUNK - 1, y, lz)];
+      return nEast.data[blockIndex(0, y, lz)];
+    }
+    if (lx >= 0 && lx < CHUNK) {
+      if (lz < 0) return nNorth.data[blockIndex(lx, y, CHUNK - 1)];
+      return nSouth.data[blockIndex(lx, y, 0)];
+    }
+    // köşegen (yalnızca AO örneklemesinde): ilgili komşu chunk'ı al
+    const ox = Math.floor(lx / CHUNK);
+    const oz = Math.floor(lz / CHUNK);
+    const c = world.getChunk(cx + ox, cz + oz);
+    return c.data[blockIndex(lx - ox * CHUNK, y, lz - oz * CHUNK)];
+  }
+
+  // AO örneklemesi için tekrar kullanılan geçici koordinat tamponu
+  const sp = [0, 0, 0];
+  const opaqueAt = (x, y, z) => !!BLOCKS[blockAt(x, y, z)].opaque;
+  // (nx,ny,nz): yüzün önündeki blok. Köşe için iki yan + bir çapraz komşu
+  // örneklenip 0..3 AO seviyesi hesaplanır.
+  function aoAt(nx, ny, nz, t1, t2, d1, d2) {
+    sp[0] = nx; sp[1] = ny; sp[2] = nz; sp[t1] += d1;
+    const o1 = opaqueAt(sp[0], sp[1], sp[2]);
+    sp[0] = nx; sp[1] = ny; sp[2] = nz; sp[t2] += d2;
+    const o2 = opaqueAt(sp[0], sp[1], sp[2]);
+    if (o1 && o2) return 0;
+    sp[0] = nx; sp[1] = ny; sp[2] = nz; sp[t1] += d1; sp[t2] += d2;
+    const oc = opaqueAt(sp[0], sp[1], sp[2]);
+    return 3 - (o1 + o2 + oc);
   }
 
   for (let lx = 0; lx < CHUNK; lx++) {
@@ -164,13 +197,24 @@ export function meshChunk(world, cx, cz, tileUV) {
           const base = bucket.positions.length / 3;
           const surfaceDrop = isLiquid && face.dir[1] !== -1 && blockAt(lx, y + 1, lz) !== id;
 
+          // AO için yüz ekseni ve iki teğet eksen
+          const nAxis = face.dir[0] !== 0 ? 0 : face.dir[1] !== 0 ? 1 : 2;
+          const t1 = (nAxis + 1) % 3;
+          const t2 = (nAxis + 2) % 3;
+          const nx = lx + face.dir[0];
+          const ny = y + face.dir[1];
+          const nz = lz + face.dir[2];
+
           for (const c of face.corners) {
             let cy = c.pos[1];
             if (surfaceDrop && cy === 1) cy = WATER_TOP;
             bucket.positions.push(lx + c.pos[0], y + cy, lz + c.pos[2]);
             bucket.normals.push(...face.dir);
             bucket.uvs.push(u0 + c.uv[0] * (u1 - u0), v0 + c.uv[1] * (v1 - v0));
-            bucket.colors.push(face.shade, face.shade, face.shade);
+            const d1 = c.pos[t1] === 1 ? 1 : -1;
+            const d2 = c.pos[t2] === 1 ? 1 : -1;
+            const shade = face.shade * AO_LEVELS[aoAt(nx, ny, nz, t1, t2, d1, d2)];
+            bucket.colors.push(shade, shade, shade);
           }
           bucket.indices.push(base, base + 1, base + 2, base + 2, base + 1, base + 3);
         }

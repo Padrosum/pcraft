@@ -35,7 +35,7 @@ const MOB_NAMES = {
 };
 
 // ---------- three.js setup ----------
-const renderer = new THREE.WebGLRenderer({ antialias: false });
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById('app').appendChild(renderer.domElement);
@@ -771,6 +771,7 @@ function animate() {
     const underwater = player.headInWater();
     const inLava = player.bodyInLiquid(B.LAVA);
     sky.update(started ? dt : 0, player.pos, camera, underwater && !inLava, world.dim);
+    world.animate(dt);
     if (inLava) {
       hud.setInLava(true);
       lavaTick += dt;

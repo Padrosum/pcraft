@@ -2,7 +2,7 @@
 // mesher tutarlılığı ve oyuncu fiziği. `npm test` ile çalışır.
 import * as THREE from 'three';
 import { CHUNK, HEIGHT, SEA_LEVEL, B, BLOCKS } from '../src/constants.js';
-import { Chunk } from '../src/world/chunk.js';
+import { Chunk, blockIndex } from '../src/world/chunk.js';
 import { makeGenerator, generateChunkData, findSpawn, MOUNTAIN_LEVEL } from '../src/world/worldgen.js';
 import { meshChunk } from '../src/world/mesher.js';
 
@@ -239,6 +239,54 @@ section('mesher');
   }
   check('5 chunk hatasız mesh edildi', meshed === 5 && bad === 0, `faces=${faces}`);
   check('mesh üretimi boş değil', faces > 1000, `faces=${faces}`);
+
+  // --- ambient occlusion ---
+  const flatData = () => {
+    const arr = new Uint8Array(CHUNK * HEIGHT * CHUNK);
+    for (let y = 0; y <= 10; y++) {
+      for (let lx = 0; lx < CHUNK; lx++) {
+        for (let lz = 0; lz < CHUNK; lz++) arr[blockIndex(lx, y, lz)] = B.STONE;
+      }
+    }
+    return arr;
+  };
+  const flatWorld = () => ({
+    chunks: new Map(),
+    getChunk(cx, cz) {
+      const k = `${cx},${cz}`;
+      let c = this.chunks.get(k);
+      if (!c) { c = new Chunk(cx, cz, flatData()); this.chunks.set(k, c); }
+      return c;
+    },
+  });
+  const topColors = (geo) => {
+    const out = [];
+    if (!geo) return out;
+    const n = geo.getAttribute('normal');
+    const c = geo.getAttribute('color');
+    for (let i = 0; i < n.count; i++) {
+      if (n.getY(i) > 0.5) out.push(c.getX(i), c.getY(i), c.getZ(i));
+    }
+    return out;
+  };
+
+  // düz, açık bir zeminde üst yüzler tam parlak olmalı (AO karartmamalı)
+  const flatGeo = meshChunk(flatWorld(), 0, 0, fakeAtlas.tileUV);
+  const tc = topColors(flatGeo.opaque);
+  check('açık zeminde üst yüzler karartılmaz',
+    tc.length > 0 && tc.every((v) => Math.abs(v - 1) < 1e-6), `n=${tc.length}`);
+
+  // tek blokluk çukur: duvar diplerinde AO karartması oluşmalı
+  const pitWorld = flatWorld();
+  pitWorld.getChunk(0, 0).set(8, 10, 8, B.AIR);
+  const pitGeo = meshChunk(pitWorld, 0, 0, fakeAtlas.tileUV);
+  const all = pitGeo.opaque.getAttribute('color');
+  let minC = 1;
+  for (let i = 0; i < all.count; i++) minC = Math.min(minC, all.getX(i), all.getY(i), all.getZ(i));
+  check('çukur kenarlarında AO karartması var', minC < 0.9, `min=${minC.toFixed(2)}`);
+
+  // AO değerleri geçerli aralıkta (0 ve 1 arasında)
+  check('AO renkleri 0..1 aralığında', minC >= 0 && tc.every((v) => v <= 1));
 }
 
 // ---------- oyuncu fiziği ----------

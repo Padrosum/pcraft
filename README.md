@@ -28,6 +28,10 @@ Tarayıcıda çalışan, arkadaşlarınla oynayabileceğin voxel (Minecraft tarz
 - Seed'li prosedürel arazi: ova, orman, çöl, kar ve dağ biyomları; göller,
   kumsallar, ağaçlar, kaktüsler ve çiçekler
 - Yer altı mağaraları, kömür/demir cevherleri ve çakıl yatakları
+- **Grafikler:** blok köşelerinde **ambient occlusion** (yumuşak gölgeleme),
+  dikey değişen **gökyüzü kubbesi** (gün doğumu/batımı renkleri, güneş halesi),
+  gece **yıldızları**, sürüklenen **bulutlar**, dalgalanan **su** yüzeyi,
+  görüş mesafesine uyan sis ve kenar yumuşatma
 - **Eşya & envanter:** kırdığın her blok item düşürür; itemler yere saçılır,
   sana doğru çekilir ve 36 slotluk envanterine girer (yığın 64, tık/sağ tık
   ile taşı/yarısını al). Envanter tarayıcıda saklanır

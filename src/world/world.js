@@ -23,19 +23,38 @@ export class World {
     this.edits = this._dimStore(this.dim); // active dimension's edit map
 
     const tex = atlas.texture;
+    // su yüzeyi dalgası için paylaşılan zaman üniformu
+    this.waterTime = { value: 0 };
+    const waterMat = new THREE.MeshLambertMaterial({
+      map: tex, vertexColors: true, transparent: true, opacity: 0.72,
+      depthWrite: false, side: THREE.DoubleSide,
+    });
+    waterMat.onBeforeCompile = (shader) => {
+      shader.uniforms.uWaterTime = this.waterTime;
+      shader.vertexShader = `uniform float uWaterTime;\n${shader.vertexShader}`.replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        vec4 wpos = modelMatrix * vec4(transformed, 1.0);
+        float wv = sin(uWaterTime * 1.7 + (wpos.x + wpos.z) * 0.55) * 0.05
+                 + sin(uWaterTime * 2.9 + (wpos.x - wpos.z) * 0.35) * 0.03;
+        transformed.y += wv * max(normal.y, 0.0);`,
+      );
+    };
     this.materials = {
       opaque: new THREE.MeshLambertMaterial({ map: tex, vertexColors: true }),
       cutout: new THREE.MeshLambertMaterial({
         map: tex, vertexColors: true, transparent: true, alphaTest: 0.4, side: THREE.DoubleSide,
       }),
-      water: new THREE.MeshLambertMaterial({
-        map: tex, vertexColors: true, transparent: true, opacity: 0.7,
-        depthWrite: false, side: THREE.DoubleSide,
-      }),
+      water: waterMat,
       // self-lit blocks (lava, glowstone, torches): unaffected by lights;
       // DoubleSide so cross-shaped torches read from every angle
       emissive: new THREE.MeshBasicMaterial({ map: tex, vertexColors: true, side: THREE.DoubleSide }),
     };
+  }
+
+  // zamanla değişen görsel efektler (su dalgası)
+  animate(dt) {
+    this.waterTime.value += dt;
   }
 
   _dimStore(dim) {
